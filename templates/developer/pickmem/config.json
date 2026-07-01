@@ -1,0 +1,20 @@
+{
+  "template_name": "developer",
+  "version": 1,
+  "routing_rules": [
+    { "keyword": "postgres",  "group": "stack" },
+    { "keyword": "redis",     "group": "stack" },
+    { "keyword": "kubernetes","group": "stack" },
+    { "keyword": "docker",    "group": "stack" },
+    { "keyword": "typescript","group": "stack" },
+    { "keyword": "golang",    "group": "stack" },
+    { "keyword": "rust",      "group": "stack" },
+    { "keyword": "python",    "group": "stack" },
+    { "keyword": "editor",    "group": "tools" },
+    { "keyword": "shortcut",  "group": "tools" },
+    { "keyword": "keybinding","group": "tools" },
+    { "keyword": "learning",  "group": "learning" },
+    { "keyword": "course",    "group": "learning" },
+    { "keyword": "book",      "group": "learning" }
+  ]
+}

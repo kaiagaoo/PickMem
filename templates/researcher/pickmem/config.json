@@ -1,0 +1,17 @@
+{
+  "template_name": "researcher",
+  "version": 1,
+  "routing_rules": [
+    { "keyword": "paper",     "group": "papers" },
+    { "keyword": "arxiv",     "group": "papers" },
+    { "keyword": "citation",  "group": "papers" },
+    { "keyword": "advisor",   "group": "advisors" },
+    { "keyword": "prof",      "group": "advisors" },
+    { "keyword": "course",    "group": "courses" },
+    { "keyword": "lecture",   "group": "courses" },
+    { "keyword": "problem set","group": "courses" },
+    { "keyword": "deadline",  "group": "deadlines" },
+    { "keyword": "due",       "group": "deadlines" },
+    { "keyword": "submission","group": "deadlines" }
+  ]
+}
