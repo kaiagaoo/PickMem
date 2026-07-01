@@ -15,8 +15,8 @@ Context for future Claude Code sessions working in this repo.
 | M1 — Vault Store + CLI | ✅ Done | `init`, `add`, `list`, `show`, `edit`, `rm`; 3 templates; vault package + tests. |
 | M2 — TUI picker | ✅ Done | `pickmem pick` — grouped multi-select, lens overlay, fuzzy filter, save-as-lens, Nord/plain themes. |
 | M3 — MCP server | ✅ Done | `pickmem serve` (stdio) exposing `pickmem://active` + 4 tools; `install`/`uninstall` for Claude Desktop and Cursor. |
-| M4 — Ingestion + inbox review | ⬜ Next | Import parsers, routing, bulk-review TUI. |
-| M5 — Chrome extension | ⬜ | MV3, load-unpacked distribution. |
+| M4 — Ingestion + inbox review | ✅ Done | `pickmem import <file>` (JSON/bullets/paragraphs auto-detect); `pickmem review` (bulk-select TUI); rules + optional Anthropic AI classifier behind `--allow-ai`. |
+| M5 — Chrome extension | ⬜ Next | MV3, load-unpacked distribution. |
 | M6 — Case study + polish | ⬜ | 4–6 scenarios, 3 conditions each. |
 
 Work milestone by milestone, in order. At the start of each, propose a plan + file list, then implement.
@@ -30,6 +30,8 @@ internal/
   picker/             # Bubble Tea TUI (Model/Update/View, filter, lens overlay, theme)
   mcp/                # MCP server: assemble.go (active → block), propose.go (chat → inbox), server.go (SDK wiring)
   install/            # Client config writers (Claude Desktop, Cursor) — merges, doesn't clobber
+  ingest/             # text.go (shared split/hash/label), parse.go (JSON/bullets/paragraphs), import.go (pipeline)
+  routing/            # Router + Classifier interface, RulesClassifier, AIClassifier (Anthropic Messages API)
   cli/                # cobra subcommands + vault-path discovery
 templates/            # personal, developer, researcher (embedded via go:embed)
 demo/                 # VHS tapes (pick.tape → pick.gif)
@@ -43,6 +45,55 @@ Every subcommand except `init` resolves the vault path in this order:
 1. `--vault <path>` flag
 2. `$PICKMEM_VAULT` env var
 3. `~/.config/pickmem/config.json` (or `$XDG_CONFIG_HOME/pickmem/config.json`) — recorded by `init`
+
+## How to test M4 (`pickmem import` + `pickmem review`)
+
+```bash
+go build -o /tmp/pickmem ./cmd/pickmem
+VAULT=$(mktemp -d) && /tmp/pickmem init "$VAULT" --template developer
+
+# Point it at any of these shapes — auto-detect picks the right parser:
+#   ["memory 1", "memory 2"]                       bare JSON array
+#   [{"memory": "..."}, {"text": "..."}]           JSON objects
+#   {"memories": ["...", "..."]}                   wrapped
+#   - bullet 1\n- bullet 2                         markdown list
+#   paragraph 1.\n\nparagraph 2.                   blank-line separated
+echo '["moved to Portland in 2024","prefers vim over vscode","runs python + docker in prod"]' > /tmp/export.json
+/tmp/pickmem import /tmp/export.json --vault "$VAULT"
+# ->  Parsed: 3   Staged: 3   Routed: 1 (docker → stack)   Duplicate: 0
+
+/tmp/pickmem list --pending --vault "$VAULT"     # see what's queued
+/tmp/pickmem review --vault "$VAULT"             # bulk-review TUI
+```
+
+Review TUI keys:
+
+| Key | Action |
+|-----|--------|
+| `space` | select at cursor |
+| `a` | accept selected (or cursor row) — moves inbox → group, flips `status: active` |
+| `A` | accept every remaining row that has a `suggested_group` |
+| `r` | reject selected (or cursor) — deletes inbox file |
+| `g` | reassign group (overlay: type new, `tab`/`↓` browse existing) |
+| `/` | filter over label + body + suggested_group |
+| `enter` | apply decisions and exit |
+| `q`/`esc` | cancel — inbox unchanged |
+
+Rows with no suggested_group can't be accepted with `a`/`A` — you have to `g` first. This prevents silent misfiling.
+
+**AI classifier (opt-in):**
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+/tmp/pickmem import /tmp/export.json --allow-ai --vault "$VAULT"
+```
+The AI only proposes groups from the vault's existing taxonomy — it can't invent new categories. If the API errors, import falls back to rules-only silently (design: an outage shouldn't fail an import).
+
+Automated tests:
+```bash
+go test ./internal/ingest/...    # 12 tests: parsers, dedupe, routing, 30-item DoD
+go test ./internal/routing/...   # 12 tests: rules, Router chain, Anthropic (mock HTTP)
+go test ./internal/picker/...    # 18 tests: picker + review model state machines
+```
 
 ## How to test M3 (`pickmem serve` + `install`)
 
@@ -205,7 +256,7 @@ The load-bearing test is `TestCreateOnlyNeverRewritesUserAuthoredFile` in `inter
 - **Create-only.** PickMem only creates files and moves inbox→group. `Store.Update` checks the on-disk sha256 against the last-written hash before rewriting; if a user edited via Obsidian, Update refuses.
 - **Frontmatter is grouping truth.** Folder location is derived, never authoritative.
 - **Deterministic id lookup, not RAG.** Picking = fetch by id. No similarity search anywhere.
-- **AI features are gated behind `--allow-ai`.** M1 has none; M4 will introduce classifiers behind that flag.
+- **AI features are gated behind `--allow-ai`.** M4 introduced the AIClassifier (Anthropic Messages API). Off by default; requires both the flag and `$ANTHROPIC_API_KEY`. Also guarded: the classifier can only propose groups that already exist in the vault — it never invents taxonomy.
 - **`pickmem edit` launches `$EDITOR`** (or `$VISUAL`, or `vi`). PickMem itself does not rewrite user-facing files.
 
 ## Key libraries
@@ -216,8 +267,9 @@ The load-bearing test is `TestCreateOnlyNeverRewritesUserAuthoredFile` in `inter
 - `github.com/oklog/ulid/v2` — note ids
 - `golang.org/x/term` — TTY detection for stdin-vs-editor
 - `github.com/modelcontextprotocol/go-sdk` — MCP server (v1.6.1, official)
-- `github.com/charmbracelet/bubbletea` + `bubbles` + `lipgloss` — TUI picker
+- `github.com/charmbracelet/bubbletea` + `bubbles` + `lipgloss` — TUI picker + review
 - `github.com/sahilm/fuzzy` — picker filter
+- Anthropic Messages API — direct `net/http` call, no SDK; behind `--allow-ai`
 
 ## Before starting a new milestone
 

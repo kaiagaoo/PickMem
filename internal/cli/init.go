@@ -33,15 +33,22 @@ func newInitCmd() *cobra.Command {
 				fmt.Fprintf(cmd.OutOrStdout(), "Vault already initialized at %s (use --force to reapply template).\n", target)
 			}
 
-			s, err := vault.Init(target)
-			if err != nil {
-				return err
-			}
-
+			// Apply the template BEFORE vault.Init so the template's
+			// pickmem/config.json (with routing rules) lands first.
+			// vault.Init won't overwrite it — it only writes defaults for
+			// files that don't already exist.
 			if templateName != "" && (!existed || force) {
 				if err := templates.Apply(templateName, target); err != nil {
 					return fmt.Errorf("apply template %q: %w", templateName, err)
 				}
+			}
+			s, err := vault.Init(target)
+			if err != nil {
+				return err
+			}
+			// Stamp the template name onto whatever config is now on disk
+			// (either the template's or the freshly-written default).
+			if templateName != "" && (!existed || force) {
 				cfg, err := s.LoadConfig()
 				if err != nil {
 					return err
