@@ -14,8 +14,8 @@ Context for future Claude Code sessions working in this repo.
 |-----------|--------|-------|
 | M1 — Vault Store + CLI | ✅ Done | `init`, `add`, `list`, `show`, `edit`, `rm`; 3 templates; vault package + tests. |
 | M2 — TUI picker | ✅ Done | `pickmem pick` — grouped multi-select, lens overlay, fuzzy filter, save-as-lens, Nord/plain themes. |
-| M3 — MCP server | ⬜ Next | `pickmem serve` (stdio). |
-| M4 — Ingestion + inbox review | ⬜ | Import parsers, routing, bulk review. |
+| M3 — MCP server | ✅ Done | `pickmem serve` (stdio) exposing `pickmem://active` + 4 tools; `install`/`uninstall` for Claude Desktop and Cursor. |
+| M4 — Ingestion + inbox review | ⬜ Next | Import parsers, routing, bulk-review TUI. |
 | M5 — Chrome extension | ⬜ | MV3, load-unpacked distribution. |
 | M6 — Case study + polish | ⬜ | 4–6 scenarios, 3 conditions each. |
 
@@ -28,6 +28,8 @@ cmd/pickmem/          # main (cobra entry point)
 internal/
   vault/              # THE Store: notes, groups, inbox, lenses, active. All CRUD goes through here.
   picker/             # Bubble Tea TUI (Model/Update/View, filter, lens overlay, theme)
+  mcp/                # MCP server: assemble.go (active → block), propose.go (chat → inbox), server.go (SDK wiring)
+  install/            # Client config writers (Claude Desktop, Cursor) — merges, doesn't clobber
   cli/                # cobra subcommands + vault-path discovery
 templates/            # personal, developer, researcher (embedded via go:embed)
 demo/                 # VHS tapes (pick.tape → pick.gif)
@@ -41,6 +43,60 @@ Every subcommand except `init` resolves the vault path in this order:
 1. `--vault <path>` flag
 2. `$PICKMEM_VAULT` env var
 3. `~/.config/pickmem/config.json` (or `$XDG_CONFIG_HOME/pickmem/config.json`) — recorded by `init`
+
+## How to test M3 (`pickmem serve` + `install`)
+
+The server is stdio-only, so most useful testing goes through a real client. But you can drive it by hand for a sanity check:
+
+```bash
+go build -o /tmp/pickmem ./cmd/pickmem
+
+# Fresh vault, add a note, put it into the active selection.
+VAULT=$(mktemp -d) && /tmp/pickmem init "$VAULT"
+/tmp/pickmem add --label "salary" --group financial --body "monthly base \$8k" --vault "$VAULT"
+# Grab the ULID from that add output, then:
+ID=<paste the ULID>
+echo "{\"item_ids\":[\"$ID\"]}" > "$VAULT/pickmem/active.json"
+
+# Send a stdio round-trip: initialize + tools/list + read the resource.
+{
+  echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"cli","version":"1"}}}'
+  echo '{"jsonrpc":"2.0","method":"notifications/initialized"}'
+  echo '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+  echo '{"jsonrpc":"2.0","id":3,"method":"resources/read","params":{"uri":"pickmem://active"}}'
+  sleep 0.2
+} | /tmp/pickmem serve --vault "$VAULT"
+```
+
+Wire it into Claude Desktop (macOS):
+
+```bash
+/tmp/pickmem install claude-desktop            # writes ~/Library/Application Support/Claude/claude_desktop_config.json
+/tmp/pickmem install claude-desktop --dry-run  # preview the entry without writing
+/tmp/pickmem uninstall claude-desktop          # remove
+```
+
+For Cursor: `/tmp/pickmem install cursor` (writes `~/.cursor/mcp.json`). Both merges are non-destructive — other MCP servers already in the config are preserved.
+
+**Cline** doesn't have a stable per-user config path (its state lives inside VS Code workspaces), so add it by hand from Cline's Settings → MCP Servers UI. Command: the `pickmem` binary; args: `serve`.
+
+**Tools exposed:**
+
+| Tool / Resource | Purpose |
+|-----------------|---------|
+| resource `pickmem://active` | The assembled context block for the current pick |
+| tool `get_active_memory` | Same block via a tool call (for clients that don't auto-wire resources) |
+| tool `list_lenses` | `[{name, items}]` for every saved lens |
+| tool `use_lens(name)` | Activate a lens → rewrites `active.json` → returns the new block |
+| tool `propose_memories(chat_text)` | Rules-based extraction → stages to `pickmem/inbox/` as `status: pending`. **Never activates.** Only the user (via `pick`) can promote them. |
+
+The invariant to keep intact: `propose_memories` writes to inbox only. If you touch the propose path, re-verify `TestProposeMemoriesStagesToInboxOnly` in `internal/mcp/server_test.go`.
+
+Automated tests:
+```bash
+go test ./internal/mcp/...       # 9 tests: resource, all 4 tools, dedupe, routing rules
+go test ./internal/install/...   # 6 tests: merge, replace, uninstall preserves siblings
+```
 
 ## How to test M2 (`pickmem pick`)
 
@@ -159,7 +215,9 @@ The load-bearing test is `TestCreateOnlyNeverRewritesUserAuthoredFile` in `inter
 - `gopkg.in/yaml.v3` — frontmatter writer (`adrg` is read-only)
 - `github.com/oklog/ulid/v2` — note ids
 - `golang.org/x/term` — TTY detection for stdin-vs-editor
-- `github.com/modelcontextprotocol/go-sdk` — reserved for M3 (not yet imported)
+- `github.com/modelcontextprotocol/go-sdk` — MCP server (v1.6.1, official)
+- `github.com/charmbracelet/bubbletea` + `bubbles` + `lipgloss` — TUI picker
+- `github.com/sahilm/fuzzy` — picker filter
 
 ## Before starting a new milestone
 
