@@ -10,31 +10,42 @@ import type { Active, Note } from "./types.ts";
  * active selection and a resolver that returns a Note (or undefined) for
  * an id. Undefined-returning ids are skipped silently, matching Go's
  * behavior for stale references.
+ *
+ * Format: plain markdown, deliberately boring — see the design note in
+ * internal/mcp/assemble.go for why this isn't XML-tagged. The closing
+ * "--- end pickmem memory ---" line doubles as the boundary between this
+ * block and whatever the user types next when Insert/Copy glue it into a
+ * chat input; no separate divider is added on the extension side.
  */
 export function assemble(
   active: Active,
   resolve: (id: string) => Note | undefined
 ): string {
   if (!active.item_ids || active.item_ids.length === 0) {
-    return emptyMarker(active.active_lens);
+    return emptyBlock(active.active_lens);
   }
   const parts: string[] = [];
+  parts.push("--- pickmem: selected memory");
   if (active.active_lens) {
-    parts.push(`<!-- pickmem lens: ${active.active_lens} -->\n\n`);
+    parts.push(` (lens: ${active.active_lens})`);
   }
+  parts.push(" ---\n");
   let first = true;
   for (const id of active.item_ids) {
     const n = resolve(id);
     if (!n) continue;
-    if (!first) parts.push("\n---\n\n");
-    parts.push(`# ${n.label}  ·  ${n.group}\n\n`);
-    parts.push(n.body.replace(/\n+$/g, "") + "\n");
+    if (!first) parts.push("\n");
+    const body = n.body.replace(/\n+$/g, "");
+    parts.push(`${n.label} (${n.group}): ${body}\n`);
     first = false;
   }
+  parts.push("--- end pickmem memory ---\n");
   return parts.join("");
 }
 
-function emptyMarker(lens: string | undefined): string {
-  if (lens) return `<!-- pickmem: lens "${lens}" is empty -->\n`;
-  return "<!-- pickmem: no memory selected -->\n";
+function emptyBlock(lens: string | undefined): string {
+  if (lens) {
+    return `--- pickmem: lens "${lens}" is empty ---\n`;
+  }
+  return "--- pickmem: no memory selected ---\n";
 }

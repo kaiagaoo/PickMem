@@ -92,7 +92,10 @@ export function prependIntoInput(
 ): boolean {
   if (kind === "textarea" && el instanceof HTMLTextAreaElement) {
     const existing = el.value ?? "";
-    const combined = block + (existing.trimStart() ? "\n\n" + existing : "\n");
+    // block already ends in its own trailing newline (see popup.ts's
+    // buildBlock divider), so a single extra "\n" here yields exactly one
+    // blank line before the user's draft — not two.
+    const combined = existing.trimStart() ? block + "\n" + existing : block;
     el.value = combined;
     el.dispatchEvent(new Event("input", { bubbles: true }));
     // Move the caret to just after the injected block so the user's
@@ -122,8 +125,12 @@ export function prependIntoInput(
 
   // Try the modern InputEvent pathway first; some editors intercept it
   // and route through their internal state.
+  //
+  // block already ends in its own trailing newline (see popup.ts's
+  // buildBlock divider), so a single extra "\n" here yields exactly one
+  // blank line before whatever the editable already contained — not two.
   const dataTransfer = new DataTransfer();
-  dataTransfer.setData("text/plain", block + "\n\n");
+  dataTransfer.setData("text/plain", block + "\n");
   const paste = new ClipboardEvent("paste", {
     bubbles: true,
     cancelable: true,
@@ -133,7 +140,7 @@ export function prependIntoInput(
   if (dispatched && !paste.defaultPrevented) {
     // Fallback: execCommand still works in every Chromium build we
     // target for the FSA API. Deprecated, but not removed.
-    document.execCommand("insertText", false, block + "\n\n");
+    document.execCommand("insertText", false, block + "\n");
   }
   return true;
 }

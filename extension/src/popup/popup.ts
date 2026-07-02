@@ -339,6 +339,9 @@ function orderedSelectedIDs(): string[] {
 
 function buildBlock(): string {
   const ids = orderedSelectedIDs();
+  // assemble()'s own closing "--- end pickmem memory ---" line already
+  // gives Insert/Copy a clean boundary against whatever the user types
+  // next in the same chat input — no extra divider needed here.
   return assemble(
     {
       ...(state.activeLens ? { active_lens: state.activeLens } : {}),

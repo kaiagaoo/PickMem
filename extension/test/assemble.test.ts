@@ -26,21 +26,24 @@ function note(over: Partial<Note> & Pick<Note, "id" | "label" | "group" | "body"
 
 test("empty selection returns the no-memory marker", () => {
   const got = assemble({ item_ids: [] }, () => undefined);
-  assert.equal(got, "<!-- pickmem: no memory selected -->\n");
+  assert.equal(got, "--- pickmem: no memory selected ---\n");
 });
 
 test("empty selection under a named lens says which lens is empty", () => {
   const got = assemble({ active_lens: "Job-Hunt", item_ids: [] }, () => undefined);
-  assert.equal(got, `<!-- pickmem: lens "Job-Hunt" is empty -->\n`);
+  assert.equal(got, `--- pickmem: lens "Job-Hunt" is empty ---\n`);
 });
 
-test("single item gets a header + body, no separator", () => {
+test("single item: one line, header + footer wrap it", () => {
   const n = note({ id: "01A", label: "salary", group: "financial", body: "monthly base $8k" });
   const got = assemble({ item_ids: ["01A"] }, (id) => (id === "01A" ? n : undefined));
-  assert.equal(got, "# salary  ·  financial\n\nmonthly base $8k\n");
+  assert.equal(
+    got,
+    "--- pickmem: selected memory ---\nsalary (financial): monthly base $8k\n--- end pickmem memory ---\n"
+  );
 });
 
-test("multiple items get separators; header first, --- between", () => {
+test("multiple items: exactly one blank line between items, nowhere else", () => {
   const a = note({ id: "01A", label: "salary", group: "financial", body: "monthly base $8k" });
   const b = note({ id: "01B", label: "kickoff", group: "work", body: "Aug 1" });
   const got = assemble({ item_ids: ["01A", "01B"] }, (id) =>
@@ -48,18 +51,20 @@ test("multiple items get separators; header first, --- between", () => {
   );
   assert.equal(
     got,
-    "# salary  ·  financial\n\nmonthly base $8k\n\n---\n\n# kickoff  ·  work\n\nAug 1\n"
+    "--- pickmem: selected memory ---\n" +
+      "salary (financial): monthly base $8k\n" +
+      "\n" +
+      "kickoff (work): Aug 1\n" +
+      "--- end pickmem memory ---\n"
   );
-  // Byte-parity with Go's fmt.Fprintf(&b, "# %s  ·  %s\n\n", ...) followed by
-  // TrimRight(body, "\n") + "\n".
 });
 
-test("active_lens header is present when lens is set", () => {
+test("lens name appears in the header when a lens is active", () => {
   const n = note({ id: "01A", label: "x", group: "g", body: "body" });
   const got = assemble({ active_lens: "Weekend", item_ids: ["01A"] }, () => n);
   assert.equal(
     got,
-    "<!-- pickmem lens: Weekend -->\n\n# x  ·  g\n\nbody\n"
+    "--- pickmem: selected memory (lens: Weekend) ---\nx (g): body\n--- end pickmem memory ---\n"
   );
 });
 
@@ -69,11 +74,11 @@ test("stale ids are silently skipped, matching Go's behavior", () => {
     id === "01A" ? a : undefined
   );
   // Only the live item shows up; no error, no gap.
-  assert.equal(got, "# x  ·  g\n\nbody\n");
+  assert.equal(got, "--- pickmem: selected memory ---\nx (g): body\n--- end pickmem memory ---\n");
 });
 
 test("trailing newlines in body get normalized to exactly one", () => {
   const a = note({ id: "01A", label: "x", group: "g", body: "body\n\n\n\n" });
   const got = assemble({ item_ids: ["01A"] }, () => a);
-  assert.equal(got, "# x  ·  g\n\nbody\n");
+  assert.equal(got, "--- pickmem: selected memory ---\nx (g): body\n--- end pickmem memory ---\n");
 });
