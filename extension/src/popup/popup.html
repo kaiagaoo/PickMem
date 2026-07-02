@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PickMem</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="hdr">
+      <div class="title">PickMem</div>
+      <div id="site-status" class="site-status">—</div>
+    </header>
+
+    <section id="vault-empty" class="empty hidden">
+      <p>No vault connected yet.</p>
+      <button id="btn-grant" class="btn primary">Choose vault folder…</button>
+      <p class="hint">
+        Or paste a memory block into any chat manually — <strong>Copy</strong> below
+        works even without a vault connected.
+      </p>
+    </section>
+
+    <section id="lenses" class="lenses hidden">
+      <div class="section-title">Lenses</div>
+      <div id="lenses-list" class="lenses-list"></div>
+    </section>
+
+    <section id="items" class="items hidden">
+      <input
+        id="filter"
+        type="text"
+        placeholder="filter…"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <div id="items-list" class="items-list"></div>
+    </section>
+
+    <section id="save-lens" class="save-lens hidden">
+      <input id="lens-name" type="text" placeholder="lens name" maxlength="60" />
+      <button id="btn-save-lens" class="btn">Save</button>
+    </section>
+
+    <footer class="footer">
+      <div id="summary" class="summary"></div>
+      <div class="actions">
+        <button id="btn-copy" class="btn">Copy</button>
+        <button id="btn-insert" class="btn primary" disabled>Insert</button>
+      </div>
+      <div id="toast" class="toast hidden"></div>
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

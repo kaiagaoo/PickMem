@@ -1,0 +1,394 @@
+// Popup controller. Reads the vault on open, renders groups + lenses,
+// tracks the pending selection in memory, writes active.json on Insert
+// or Copy. All I/O is thin — the interesting logic lives in the
+// composed modules (vault reader/writer, adapters, assemble).
+
+import {
+  clearVaultHandle,
+  ensurePermission,
+  grantVault,
+  loadVaultHandle,
+} from "../vault/handle.ts";
+import { readVault, type Vault } from "../vault/reader.ts";
+import { assemble } from "../vault/assemble.ts";
+import { saveActive, saveLenses, upsertLens } from "../vault/writer.ts";
+import { copyToClipboard } from "../lib/clipboard.ts";
+import type { Lens, Note } from "../vault/types.ts";
+import {
+  MSG_INJECT,
+  MSG_PING,
+  type InjectResponse,
+  type PingResponse,
+} from "../lib/messages.ts";
+
+// ---------- state ----------
+
+interface State {
+  handle?: FileSystemDirectoryHandle;
+  vault?: Vault;
+  selected: Set<string>;
+  activeLens: string; // "" when custom
+  filter: string;
+  adapter?: string;
+  inputFound: boolean;
+}
+
+const state: State = {
+  selected: new Set(),
+  activeLens: "",
+  filter: "",
+  inputFound: false,
+};
+
+// ---------- boot ----------
+
+document.addEventListener("DOMContentLoaded", async () => {
+  wireButtons();
+
+  // Ping the current tab so we know whether Insert is possible on this
+  // site right away. Errors here mean the tab is a chrome:// page or the
+  // content script hasn't loaded — treat as "no adapter."
+  await pingActiveTab();
+
+  const handle = await loadVaultHandle();
+  if (!handle) {
+    showEmpty();
+    return;
+  }
+  const ok = await ensurePermission(handle);
+  if (!ok) {
+    // The user declined the permission re-request. Show the grant
+    // button again — they can retry with a fresh click.
+    showEmpty();
+    return;
+  }
+  state.handle = handle;
+  await refreshVault();
+});
+
+function wireButtons() {
+  qs("#btn-grant").addEventListener("click", async () => {
+    try {
+      const h = await grantVault();
+      state.handle = h;
+      await refreshVault();
+    } catch (e) {
+      toast(String(e), true);
+    }
+  });
+
+  qs<HTMLInputElement>("#filter").addEventListener("input", (e) => {
+    state.filter = (e.target as HTMLInputElement).value;
+    renderItems();
+  });
+
+  qs("#btn-save-lens").addEventListener("click", saveCurrentAsLens);
+  qs<HTMLInputElement>("#lens-name").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveCurrentAsLens();
+  });
+
+  qs("#btn-copy").addEventListener("click", onCopy);
+  qs("#btn-insert").addEventListener("click", onInsert);
+}
+
+async function refreshVault() {
+  if (!state.handle) return;
+  try {
+    const vault = await readVault(state.handle);
+    state.vault = vault;
+    // Seed selection from active.json so re-opening the popup shows
+    // what's currently active.
+    state.selected = new Set(vault.activeSelection.item_ids);
+    state.activeLens = vault.activeSelection.active_lens ?? "";
+  } catch (e) {
+    toast(`load failed: ${e instanceof Error ? e.message : String(e)}`, true);
+    return;
+  }
+  showLoaded();
+  renderLenses();
+  renderItems();
+  renderSummary();
+}
+
+// ---------- rendering ----------
+
+function renderLenses() {
+  const el = qs("#lenses-list");
+  el.innerHTML = "";
+  if (!state.vault) return;
+  if (state.vault.lenses.length === 0) {
+    el.innerHTML = `<span class="lens-chip" style="cursor:default;color:var(--dim)">no lenses yet</span>`;
+    return;
+  }
+  for (const l of state.vault.lenses) {
+    const chip = document.createElement("button");
+    chip.className = "lens-chip";
+    if (l.name === state.activeLens) chip.classList.add("active");
+    chip.textContent = `${l.name} · ${l.item_ids.length}`;
+    chip.addEventListener("click", () => applyLens(l));
+    el.appendChild(chip);
+  }
+}
+
+function renderItems() {
+  const el = qs("#items-list");
+  el.innerHTML = "";
+  if (!state.vault) return;
+  const q = state.filter.trim().toLowerCase();
+  const groups = new Map<string, Note[]>();
+  for (const n of state.vault.active) {
+    if (q && !matches(n, q)) continue;
+    const arr = groups.get(n.group) ?? [];
+    arr.push(n);
+    groups.set(n.group, arr);
+  }
+  if (groups.size === 0) {
+    el.innerHTML = `<div class="group-header" style="color:var(--dim);text-transform:none">no matches</div>`;
+    return;
+  }
+  const sortedGroups = Array.from(groups.keys()).sort();
+  for (const g of sortedGroups) {
+    const header = document.createElement("div");
+    header.className = "group-header";
+    header.textContent = g;
+    el.appendChild(header);
+    for (const n of groups.get(g)!) {
+      el.appendChild(renderItem(n));
+    }
+  }
+}
+
+function renderItem(n: Note): HTMLElement {
+  const row = document.createElement("div");
+  row.className = "item";
+  if (state.selected.has(n.id)) row.classList.add("selected");
+  const box = document.createElement("span");
+  box.className = "box";
+  box.textContent = state.selected.has(n.id) ? "[x]" : "[ ]";
+  const label = document.createElement("span");
+  label.className = "label";
+  label.textContent = n.label;
+  row.appendChild(box);
+  row.appendChild(label);
+  if (n.tags && n.tags.length > 0) {
+    const tags = document.createElement("span");
+    tags.className = "tags";
+    tags.textContent = "#" + n.tags.join(" #");
+    row.appendChild(tags);
+  }
+  row.addEventListener("click", () => toggle(n.id));
+  return row;
+}
+
+function renderSummary() {
+  const label = state.activeLens || (state.selected.size ? "custom" : "none");
+  const tokens = estimateTokens(selectedBodies());
+  qs("#summary").textContent = `Active: ${label} · ${state.selected.size} selected · ~${tokens} tokens`;
+  const insert = qs<HTMLButtonElement>("#btn-insert");
+  insert.disabled = !state.inputFound || state.selected.size === 0;
+}
+
+// ---------- actions ----------
+
+function toggle(id: string) {
+  if (state.selected.has(id)) state.selected.delete(id);
+  else state.selected.add(id);
+  state.activeLens = ""; // manual edit breaks the lens
+  renderLenses();
+  renderItems();
+  renderSummary();
+}
+
+function applyLens(l: Lens) {
+  state.selected = new Set(
+    l.item_ids.filter((id) => state.vault?.byID.has(id))
+  );
+  state.activeLens = l.name;
+  renderLenses();
+  renderItems();
+  renderSummary();
+}
+
+async function saveCurrentAsLens() {
+  if (!state.handle || !state.vault) return;
+  const name = qs<HTMLInputElement>("#lens-name").value.trim();
+  if (!name) {
+    toast("lens name required", true);
+    return;
+  }
+  const lens: Lens = { name, item_ids: orderedSelectedIDs() };
+  const next = upsertLens(state.vault.lenses, lens);
+  try {
+    await saveLenses(state.handle, next);
+    state.vault.lenses = next;
+    state.activeLens = name;
+    qs<HTMLInputElement>("#lens-name").value = "";
+    renderLenses();
+    renderSummary();
+    toast(`Saved lens "${name}"`);
+  } catch (e) {
+    toast(`save failed: ${String(e)}`, true);
+  }
+}
+
+async function onCopy() {
+  const block = buildBlock();
+  await copyToClipboard(block);
+  await persistActive();
+  toast("Copied to clipboard");
+}
+
+async function onInsert() {
+  if (!state.inputFound) return;
+  const block = buildBlock();
+  await copyToClipboard(block); // belt-and-suspenders — user can always paste
+  await persistActive();
+  try {
+    const tab = await activeTab();
+    if (!tab?.id) {
+      toast("no active tab", true);
+      return;
+    }
+    const res = (await chrome.tabs.sendMessage(tab.id, {
+      type: MSG_INJECT,
+      block,
+    })) as InjectResponse | undefined;
+    if (!res) {
+      toast("no response from page — try Copy", true);
+      return;
+    }
+    if (!res.ok) {
+      toast(res.reason ?? "insert failed", true);
+      return;
+    }
+    toast("Inserted");
+  } catch (e) {
+    toast(`inject failed: ${String(e)}`, true);
+  }
+}
+
+async function persistActive() {
+  if (!state.handle) return;
+  await saveActive(state.handle, {
+    ...(state.activeLens ? { active_lens: state.activeLens } : {}),
+    item_ids: orderedSelectedIDs(),
+  });
+}
+
+async function pingActiveTab() {
+  try {
+    const tab = await activeTab();
+    if (!tab?.id) return;
+    const res = (await chrome.tabs.sendMessage(tab.id, {
+      type: MSG_PING,
+    })) as PingResponse | undefined;
+    if (!res || !res.ok) {
+      qs("#site-status").textContent = "no adapter · clipboard only";
+      state.inputFound = false;
+      return;
+    }
+    state.adapter = res.adapter;
+    state.inputFound = !!res.inputFound;
+    qs("#site-status").textContent = res.inputFound
+      ? `${res.adapter} · ready`
+      : `${res.adapter} · input not found`;
+  } catch {
+    // No content script on this page (chrome:// or unmatched host).
+    qs("#site-status").textContent = "no adapter · clipboard only";
+    state.inputFound = false;
+  }
+}
+
+// ---------- helpers ----------
+
+function selectedBodies(): string[] {
+  if (!state.vault) return [];
+  const out: string[] = [];
+  for (const id of state.selected) {
+    const n = state.vault.byID.get(id);
+    if (n) out.push(n.body);
+  }
+  return out;
+}
+
+/** Return selected ids in the display order (group-alphabetical, then
+ *  file order within a group). Matches how the Go picker persists ids so
+ *  the two write paths converge. */
+function orderedSelectedIDs(): string[] {
+  if (!state.vault) return [];
+  const out: string[] = [];
+  const sorted = [...state.vault.active].sort((a, b) => {
+    if (a.group === b.group) return a.id.localeCompare(b.id);
+    return a.group.localeCompare(b.group);
+  });
+  for (const n of sorted) {
+    if (state.selected.has(n.id)) out.push(n.id);
+  }
+  return out;
+}
+
+function buildBlock(): string {
+  const ids = orderedSelectedIDs();
+  return assemble(
+    {
+      ...(state.activeLens ? { active_lens: state.activeLens } : {}),
+      item_ids: ids,
+    },
+    (id) => state.vault?.byID.get(id)
+  );
+}
+
+function estimateTokens(bodies: string[]): number {
+  let total = 0;
+  for (const b of bodies) total += b.length;
+  if (total === 0) return 0;
+  return Math.ceil(total / 4);
+}
+
+function matches(n: Note, q: string): boolean {
+  return (
+    n.label.toLowerCase().includes(q) ||
+    n.body.toLowerCase().includes(q) ||
+    (n.tags ?? []).some((t) => t.toLowerCase().includes(q))
+  );
+}
+
+async function activeTab(): Promise<chrome.tabs.Tab | undefined> {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  return tabs[0];
+}
+
+function qs<T extends HTMLElement = HTMLElement>(sel: string): T {
+  const el = document.querySelector<T>(sel);
+  if (!el) throw new Error(`missing element: ${sel}`);
+  return el;
+}
+
+function showEmpty() {
+  qs("#vault-empty").classList.remove("hidden");
+  qs("#lenses").classList.add("hidden");
+  qs("#items").classList.add("hidden");
+  qs("#save-lens").classList.add("hidden");
+  qs("#summary").textContent = "No vault. Copy still works — assembles from an empty selection.";
+}
+
+function showLoaded() {
+  qs("#vault-empty").classList.add("hidden");
+  qs("#lenses").classList.remove("hidden");
+  qs("#items").classList.remove("hidden");
+  qs("#save-lens").classList.remove("hidden");
+}
+
+let toastTimer: number | undefined;
+function toast(msg: string, err = false) {
+  const el = qs("#toast");
+  el.textContent = msg;
+  el.classList.remove("hidden");
+  el.classList.toggle("err", err);
+  if (toastTimer !== undefined) window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => el.classList.add("hidden"), 2400);
+}
+
+// Silence the unused-import warning while we don't need this yet — kept
+// so future "reset vault" actions don't have to add an import.
+void clearVaultHandle;

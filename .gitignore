@@ -1,0 +1,13 @@
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Go
+/pickmem
+/*.test
+
+# Extension build artifacts (source is committed; dist/ and node_modules/ are not)
+extension/node_modules/
+extension/dist/

@@ -16,8 +16,8 @@ Context for future Claude Code sessions working in this repo.
 | M2 — TUI picker | ✅ Done | `pickmem pick` — grouped multi-select, lens overlay, fuzzy filter, save-as-lens, Nord/plain themes. |
 | M3 — MCP server | ✅ Done | `pickmem serve` (stdio) exposing `pickmem://active` + 4 tools; `install`/`uninstall` for Claude Desktop and Cursor. |
 | M4 — Ingestion + inbox review | ✅ Done | `pickmem import <file>` (JSON/bullets/paragraphs auto-detect); `pickmem review` (bulk-select TUI); rules + optional Anthropic AI classifier behind `--allow-ai`. |
-| M5 — Chrome extension | ⬜ Next | MV3, load-unpacked distribution. |
-| M6 — Case study + polish | ⬜ | 4–6 scenarios, 3 conditions each. |
+| M5 — Chrome extension | ✅ Done | MV3 TypeScript, load-unpacked. Adapters for ChatGPT/Claude.ai/Gemini + clipboard fallback. Byte-parity assemble with the MCP block. |
+| M6 — Case study + polish | ⬜ Next | 4–6 scenarios, 3 conditions each. |
 
 Work milestone by milestone, in order. At the start of each, propose a plan + file list, then implement.
 
@@ -35,6 +35,17 @@ internal/
   cli/                # cobra subcommands + vault-path discovery
 templates/            # personal, developer, researcher (embedded via go:embed)
 demo/                 # VHS tapes (pick.tape → pick.gif)
+extension/            # M5: MV3 TypeScript Chrome extension
+  src/
+    manifest.json     # MV3 manifest (minimal permissions, 3 host permissions)
+    popup/            # picker panel (HTML/CSS/TS)
+    content/          # runs on adapter-matched pages, receives inject msgs
+    background.ts     # minimal service worker
+    adapters/         # declarative registry (ChatGPT, Claude.ai, Gemini)
+    vault/            # handle persistence (IDB), reader, writer, assemble (byte-parity with Go)
+    lib/              # frontmatter parser, clipboard, message types
+  test/               # node --test (frontmatter, assemble, adapters)
+  esbuild.config.mjs  # bundles 3 entrypoints → dist/
 ```
 
 Module: `github.com/qwgao/pickmem`. Go 1.26.
@@ -45,6 +56,36 @@ Every subcommand except `init` resolves the vault path in this order:
 1. `--vault <path>` flag
 2. `$PICKMEM_VAULT` env var
 3. `~/.config/pickmem/config.json` (or `$XDG_CONFIG_HOME/pickmem/config.json`) — recorded by `init`
+
+## How to test M5 (Chrome extension)
+
+Build + load-unpacked:
+```bash
+cd extension/
+npm install
+npm run build           # → extension/dist/
+# Chrome → chrome://extensions → Developer mode → Load unpacked → extension/dist/
+```
+
+Run tests + typecheck (no browser needed):
+```bash
+cd extension/
+npm test                # 18 tests: frontmatter parser, assemble byte-parity, adapter registry
+npm run typecheck       # tsc --noEmit
+```
+
+Full manual test checklist lives in [extension/README.md](extension/README.md#manual-test-checklist) — run it before any release.
+
+**Design constraint to remember:** the extension's `src/vault/assemble.ts` must produce output byte-identical to `internal/mcp/assemble.go`. If you change the block format on either side, change both — and update the two test suites that lock the format (`assemble.test.ts` and the mcp tests). Users switch between the MCP path (Claude Desktop) and the extension path (browser); the same selection must produce the same context or the "same brain, two channels" thesis breaks.
+
+**Extension write scope:** the popup writes only `pickmem/lenses.json` and `pickmem/active.json`. It never creates or edits memory notes. That's a hard boundary — the create-only invariant lives in Go's `Store.Update` (sha256 check against last-written bytes) and can't be enforced from the browser, so we keep the extension's writes strictly to metadata files where clobbering is a non-issue.
+
+**Adapters:**
+- Registry: [extension/src/adapters/index.ts](extension/src/adapters/index.ts) — one entry per site.
+- Adding a site is a single declarative entry (URL regex + input selector + insert kind). No per-site code paths.
+- When a selector breaks, the popup shows a specific error and clipboard fallback still works — never silently fail.
+
+**Distribution note:** load-unpacked only. Chrome Web Store submission is deferred (§Phase 4 in EXECUTION.md) — do not add store-submission artifacts without discussion.
 
 ## How to test M4 (`pickmem import` + `pickmem review`)
 
@@ -270,6 +311,7 @@ The load-bearing test is `TestCreateOnlyNeverRewritesUserAuthoredFile` in `inter
 - `github.com/charmbracelet/bubbletea` + `bubbles` + `lipgloss` — TUI picker + review
 - `github.com/sahilm/fuzzy` — picker filter
 - Anthropic Messages API — direct `net/http` call, no SDK; behind `--allow-ai`
+- **Extension (TypeScript):** esbuild (bundler), no runtime deps. Frontmatter parser hand-rolled (~40 lines) to avoid pulling js-yaml. `@types/chrome` for DOM/Chrome API types only.
 
 ## Before starting a new milestone
 
