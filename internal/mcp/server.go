@@ -14,6 +14,24 @@ import (
 // helpers, and downstream clients; do not change without a version bump.
 const ActiveResourceURI = "pickmem://active"
 
+// serverInstructions is surfaced to the client at initialize time (the
+// MCP protocol's standard place for "how to use this server"). Clients
+// that pass it through to the model (Claude Desktop does) use it as
+// steering, not just documentation — this is what makes the model check
+// memory proactively instead of only on an explicit "check my memory"
+// prompt. Without this, get_active_memory sits unused most of the time:
+// its tool description alone isn't enough signal for a model to reach
+// for it unprompted.
+const serverInstructions = `PickMem exposes a slice of the user's personal memory that they deliberately selected for this session — not their whole history, just what they picked.
+
+Call get_active_memory (or read the pickmem://active resource) near the start of the conversation, and again whenever the user asks something that might depend on personal context: preferences, facts about their life, past decisions, ongoing projects. Don't wait to be told to check memory — that defeats the purpose of the user having picked it.
+
+If the user references something that sounds like it should be in memory but get_active_memory comes back empty or unrelated, say so plainly rather than guessing — the user may need to run their picker again.
+
+Use list_lenses and use_lens if the user mentions a saved lens by name or asks to switch context (e.g. "switch to my Job-Hunt lens").
+
+Use propose_memories only when the user asks you to save or remember something from the conversation. It stages candidates for review — it never activates them, so tell the user to run their review step to finish the save.`
+
 // NewServer wires the pickmem MCP server: one resource (pickmem://active)
 // and four tools. The server holds a *vault.Store; each request re-reads
 // the vault so external edits (Obsidian, other pickmem invocations) are
@@ -25,7 +43,9 @@ func NewServer(store *vault.Store, version string) *sdkmcp.Server {
 	srv := sdkmcp.NewServer(&sdkmcp.Implementation{
 		Name:    "pickmem",
 		Version: version,
-	}, nil)
+	}, &sdkmcp.ServerOptions{
+		Instructions: serverInstructions,
+	})
 
 	registerResource(srv, store)
 	registerTools(srv, store)
@@ -38,7 +58,7 @@ func registerResource(srv *sdkmcp.Server, store *vault.Store) {
 	srv.AddResource(&sdkmcp.Resource{
 		URI:         ActiveResourceURI,
 		Name:        "PickMem active memory",
-		Description: "The currently-picked slice of the user's memory vault. Only these items are meant to inform your responses; the user chose them for this session.",
+		Description: "The user's deliberately-picked memory for this session. Read this near the start of the conversation and whenever a question might depend on personal context — don't wait for the user to ask you to check it.",
 		MIMEType:    "text/markdown",
 	}, func(ctx context.Context, req *sdkmcp.ReadResourceRequest) (*sdkmcp.ReadResourceResult, error) {
 		// Re-read from disk so an Obsidian edit or a `pickmem pick` in
@@ -79,7 +99,7 @@ type proposeArgs struct {
 func registerTools(srv *sdkmcp.Server, store *vault.Store) {
 	sdkmcp.AddTool(srv, &sdkmcp.Tool{
 		Name:        "get_active_memory",
-		Description: "Return the currently-picked memory as a single markdown block. Same content as the pickmem://active resource; provided as a tool for clients that don't wire resources to the model automatically.",
+		Description: "Fetch the user's currently-picked memory (same content as the pickmem://active resource). Call this proactively near the start of a conversation and whenever the user's question might depend on personal context, preferences, or facts they've saved — not only when explicitly asked to check memory.",
 	}, func(ctx context.Context, req *sdkmcp.CallToolRequest, _ getActiveArgs) (*sdkmcp.CallToolResult, any, error) {
 		if err := store.Reload(); err != nil {
 			return nil, nil, err
