@@ -85,23 +85,31 @@ export async function grantVault(): Promise<FileSystemDirectoryHandle> {
   return handle;
 }
 
-/** Verifies the popup has read-write permission on the stored handle.
- * If not, silently re-requests (requires a user gesture — the caller
- * must be inside a click handler). Returns true if permission is
- * granted; false if the user declined. */
-export async function ensurePermission(
+type PermissionHandle = FileSystemDirectoryHandle & {
+  queryPermission: (o: { mode: "readwrite" }) => Promise<PermissionState>;
+  requestPermission: (o: { mode: "readwrite" }) => Promise<PermissionState>;
+};
+
+/** Read-only check: does the popup currently have read-write permission
+ * on the stored handle? Safe to call from DOMContentLoaded — queryPermission
+ * does NOT require a user gesture, unlike requestPermission. */
+export async function hasPermission(
   handle: FileSystemDirectoryHandle
 ): Promise<boolean> {
-  const opts = { mode: "readwrite" } as const;
-  // Types for these methods aren't included in stock lib.dom.d.ts across
-  // TS versions, so treat handle as `any` for the two method calls only.
-  const h = handle as unknown as {
-    queryPermission: (o: { mode: "readwrite" }) => Promise<PermissionState>;
-    requestPermission: (o: { mode: "readwrite" }) => Promise<PermissionState>;
-  };
-  let state = await h.queryPermission(opts);
-  if (state === "granted") return true;
-  state = await h.requestPermission(opts);
+  const h = handle as PermissionHandle;
+  const state = await h.queryPermission({ mode: "readwrite" });
+  return state === "granted";
+}
+
+/** Re-requests permission on the stored handle. MUST be called from
+ * inside a user-gesture handler (a click), or Chrome throws
+ * SecurityError: "User activation is required to request permissions."
+ * Returns true if the user granted it. */
+export async function requestPermission(
+  handle: FileSystemDirectoryHandle
+): Promise<boolean> {
+  const h = handle as PermissionHandle;
+  const state = await h.requestPermission({ mode: "readwrite" });
   return state === "granted";
 }
 

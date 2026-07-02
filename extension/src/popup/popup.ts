@@ -5,9 +5,10 @@
 
 import {
   clearVaultHandle,
-  ensurePermission,
   grantVault,
+  hasPermission,
   loadVaultHandle,
+  requestPermission,
 } from "../vault/handle.ts";
 import { readVault, type Vault } from "../vault/reader.ts";
 import { assemble } from "../vault/assemble.ts";
@@ -55,22 +56,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     showEmpty();
     return;
   }
-  const ok = await ensurePermission(handle);
-  if (!ok) {
-    // The user declined the permission re-request. Show the grant
-    // button again — they can retry with a fresh click.
-    showEmpty();
-    return;
-  }
+  // queryPermission does NOT require a user gesture, so this is safe to
+  // call from a page-load handler. requestPermission DOES require one —
+  // that only happens inside the button click below.
   state.handle = handle;
-  await refreshVault();
+  if (await hasPermission(handle)) {
+    await refreshVault();
+  } else {
+    showEmpty(true);
+  }
 });
 
 function wireButtons() {
   qs("#btn-grant").addEventListener("click", async () => {
     try {
-      const h = await grantVault();
-      state.handle = h;
+      if (state.handle) {
+        // We already have a handle from a previous session; Chrome just
+        // needs a fresh user-gesture-backed grant to re-activate it.
+        const ok = await requestPermission(state.handle);
+        if (!ok) {
+          toast("Permission denied", true);
+          return;
+        }
+      } else {
+        state.handle = await grantVault();
+      }
       await refreshVault();
     } catch (e) {
       toast(String(e), true);
@@ -364,11 +374,19 @@ function qs<T extends HTMLElement = HTMLElement>(sel: string): T {
   return el;
 }
 
-function showEmpty() {
+function showEmpty(needsReconnect = false) {
   qs("#vault-empty").classList.remove("hidden");
   qs("#lenses").classList.add("hidden");
   qs("#items").classList.add("hidden");
   qs("#save-lens").classList.add("hidden");
+  if (needsReconnect) {
+    qs("#vault-empty-msg").textContent =
+      "Vault permission expired. Click below to reconnect.";
+    qs<HTMLButtonElement>("#btn-grant").textContent = "Reconnect vault…";
+  } else {
+    qs("#vault-empty-msg").textContent = "No vault connected yet.";
+    qs<HTMLButtonElement>("#btn-grant").textContent = "Choose vault folder…";
+  }
   qs("#summary").textContent = "No vault. Copy still works — assembles from an empty selection.";
 }
 

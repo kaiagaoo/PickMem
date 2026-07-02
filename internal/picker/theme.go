@@ -45,14 +45,14 @@ func NordTheme() Theme {
 	)
 	return Theme{
 		Title:       lipgloss.NewStyle().Foreground(accent).Bold(true),
-		GroupHeader: lipgloss.NewStyle().Foreground(muted).Bold(true).MarginTop(1),
+		GroupHeader: lipgloss.NewStyle().Foreground(muted).Bold(true),
 		Item:        lipgloss.NewStyle().Foreground(fg),
 		Cursor:      lipgloss.NewStyle().Foreground(fg).Background(lipgloss.Color("#3B4252")).Bold(true),
 		Selected:    lipgloss.NewStyle().Foreground(sel).Bold(true),
 		Checkbox:    lipgloss.NewStyle().Foreground(sel),
 		CheckboxDim: lipgloss.NewStyle().Foreground(dim),
 		Tag:         lipgloss.NewStyle().Foreground(muted),
-		Footer:      lipgloss.NewStyle().Foreground(muted).MarginTop(1),
+		Footer:      lipgloss.NewStyle().Foreground(muted),
 		FooterKey:   lipgloss.NewStyle().Foreground(accent).Bold(true),
 		FilterBar:   lipgloss.NewStyle().Foreground(fg).Bold(true),
 		OverlayBox:  lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(accent).Padding(0, 1),
@@ -70,14 +70,14 @@ func PlainTheme() Theme {
 	bold := lipgloss.NewStyle().Bold(true)
 	return Theme{
 		Title:       bold,
-		GroupHeader: bold.MarginTop(1),
+		GroupHeader: bold,
 		Item:        plain,
 		Cursor:      lipgloss.NewStyle().Reverse(true),
 		Selected:    bold,
 		Checkbox:    bold,
 		CheckboxDim: plain,
 		Tag:         plain,
-		Footer:      plain.MarginTop(1),
+		Footer:      plain,
 		FooterKey:   bold,
 		FilterBar:   bold,
 		OverlayBox:  lipgloss.NewStyle().Border(lipgloss.NormalBorder()).Padding(0, 1),
