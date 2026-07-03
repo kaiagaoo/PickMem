@@ -36,6 +36,7 @@ Click the toolbar icon. On first open you'll see **Choose vault folder…** — 
 - **Save a lens** — type a name in the bottom field and click **Save**. Writes to `pickmem/lenses.json`.
 - **Copy** — assembles the block and writes to clipboard. Also persists the selection to `pickmem/active.json`.
 - **Insert** — same as Copy, plus messages the active tab to prepend the block into the chat's input box (existing draft text is preserved below).
+- **Capture** — select text on **any** page, then right-click → **Save selection to PickMem** (or press `Ctrl+Shift+S` / `⌘⇧S`). The selection is staged as a **pending** note in `pickmem/inbox/`, with the page title/URL appended as a source line and a `suggested_group` from your vault's routing rules. Nothing goes active until you accept it in `pickmem review` — capture feeds the inbox, never the model.
 
 If the current tab isn't on ChatGPT / Claude.ai / Gemini, the header shows `no adapter · clipboard only` and **Insert** is disabled. **Copy** always works.
 
@@ -57,7 +58,8 @@ The manifest requests the minimum:
 
 - `clipboardWrite` — the **Copy** button. Works even without vault access; this is the low-permission escape hatch.
 - `storage` — reserved for future prefs (currently unused; kept declared so future migrations don't need a manifest bump that Chrome would re-review).
-- `activeTab` + `scripting` — send inject messages to the current tab only. No wildcard content-script injection into unrelated tabs.
+- `activeTab` + `scripting` — send inject messages to the current tab only, read the selection for keyboard-shortcut capture, and show the capture toast. Both are granted per-invocation; no wildcard content-script injection into unrelated tabs.
+- `contextMenus` — the **Save selection to PickMem** right-click entry.
 - Host permissions for `chatgpt.com` / `chat.openai.com` / `claude.ai` / `gemini.google.com` — the three sites we ship adapters for. Content scripts run only on those hosts.
 
 **Not requested:** `tabs` (no tab metadata), `history`, `cookies`, `webRequest`, `<all_urls>` host permissions. The File System Access grant is per-directory and per-origin — it lives in browser state, not in `chrome://permissions`.
@@ -84,13 +86,18 @@ Run through this before shipping a new build:
 - [ ] **Insert on Gemini**: same at `gemini.google.com`.
 - [ ] **No-adapter site**: navigate to `example.com` → header says `no adapter · clipboard only`, **Insert** is disabled, **Copy** works.
 - [ ] **Vault write**: after Copy/Insert, `pickmem/active.json` in the vault contains `item_ids` matching the selection, and `active_lens` matches the popup's header.
+- [ ] **Capture via context menu**: select text on any page → right-click → **Save selection to PickMem** → green toast appears; `pickmem list --pending` shows the note with the page URL in its body.
+- [ ] **Capture via shortcut**: select text → `Ctrl+Shift+S` (`⌘⇧S` on macOS) → same result. Check the binding took at `chrome://extensions/shortcuts`.
+- [ ] **Capture routing**: with a matching keyword in `pickmem/config.json` routing rules, the toast shows `(suggested: <group>)` and `pickmem review` can accept it with `a` directly.
+- [ ] **Capture with no selection / no vault**: red toast explains what to do instead of failing silently.
+- [ ] **Capture round-trip**: `pickmem review` → accept the captured note → it lands in its group folder as an active note.
 - [ ] **Byte parity with MCP**: same selection → `pickmem serve` and the extension produce identical assembled blocks. Test: `pickmem pick` a lens, run `pickmem serve` and read `pickmem://active` via a minimal client; also click **Copy** in the popup; the strings should be byte-identical.
 
 ## Non-goals
 
 **Not on the Chrome Web Store (yet).** M5's spec pins distribution to load-unpacked. Web Store submission is deferred until the permission surface is stable and the target audience shifts to non-developers. The store's review process specifically scrutinizes the combination we ship — local file access + content scripts on the three big AI sites — so we're deferring the review overhead until we're ready to answer it in depth.
 
-**Not a notes editor.** The extension only reads notes and only writes `lenses.json` + `active.json`. All note creation and mutation lives in the CLI (`pickmem add`, `pickmem review`), because the create-only invariant lives in the Go store and can't be enforced from the browser.
+**Not a notes editor.** The extension never rewrites an existing note. Its only note-writing path is capture, which **creates** fresh pending files in `pickmem/inbox/` — the same staging the CLI's `--inbox`/`import` use. Everything else (accepting, editing, deleting, moving into groups) lives in the CLI (`pickmem add`, `pickmem review`), where the create-only invariant is enforced by the Go store.
 
 **Not a memory server.** No network calls. No sync. No "smart" auto-injection. The block only reaches a model when the user clicks Insert (or pastes what they Copied).
 

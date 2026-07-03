@@ -46,7 +46,7 @@ func ProposeFromChat(s *vault.Store, chatText string) (ProposeResult, error) {
 	// Known groups from the current vault — passed to classifiers so an
 	// AI can't invent taxonomy. Rules ignore this; kept for interface
 	// consistency.
-	groups := knownGroups(s)
+	groups := KnownGroupNames(s)
 
 	result := ProposeResult{Labels: []string{}}
 	for _, body := range candidates {
@@ -75,19 +75,6 @@ func ProposeFromChat(s *vault.Store, chatText string) (ProposeResult, error) {
 		result.Labels = append(result.Labels, label)
 	}
 	return result, nil
-}
-
-// knownGroups returns the sorted, deduped list of groups that currently
-// contain at least one active note.
-func knownGroups(s *vault.Store) []string {
-	groups := s.Groups()
-	out := make([]string, 0, len(groups))
-	for g := range groups {
-		out = append(out, g)
-	}
-	// Stable order helps the AI cache prompts if we ever add one here.
-	sortStrings(out)
-	return out
 }
 
 // sortStrings is inline-tiny to avoid a `sort` import just for one call.
