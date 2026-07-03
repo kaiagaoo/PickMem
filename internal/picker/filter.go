@@ -47,9 +47,9 @@ func filterRows(rows []row, query string) []row {
 			}
 			continue
 		}
-		// Header: keep only if the immediately-following notes contain a
-		// kept one before the next header.
-		if hasKeptChild(rows, i, kept) {
+		// Header: keep if any note anywhere in its subtree was kept, so
+		// ancestor headers survive when a deeply-nested note matches.
+		if hasKeptDescendant(rows, i, kept) {
 			candidates = append(candidates, indexed{i: i, row: r, rank: 0})
 		}
 	}
@@ -63,15 +63,21 @@ func filterRows(rows []row, query string) []row {
 	return out
 }
 
-// hasKeptChild returns true if any row between headerIdx (exclusive) and
-// the next header (or end of list) is in `kept`.
-func hasKeptChild(rows []row, headerIdx int, kept map[int]int) bool {
+// hasKeptDescendant returns true if any kept note lives in the subtree of
+// the header at headerIdx. A header's subtree is every following row with
+// a greater depth, up to the next row at the same or shallower depth — so
+// this correctly retains ancestor headers (e.g. "about") when a grandchild
+// note ("about/health/chronic") matches.
+func hasKeptDescendant(rows []row, headerIdx int, kept map[int]int) bool {
+	headerDepth := rows[headerIdx].depth
 	for j := headerIdx + 1; j < len(rows); j++ {
-		if rows[j].kind == kindHeader {
-			return false
+		if rows[j].depth <= headerDepth {
+			return false // left this header's subtree
 		}
-		if _, ok := kept[j]; ok {
-			return true
+		if rows[j].kind == kindNote {
+			if _, ok := kept[j]; ok {
+				return true
+			}
 		}
 	}
 	return false

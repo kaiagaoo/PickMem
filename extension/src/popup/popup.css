@@ -127,6 +127,36 @@ body {
   letter-spacing: 0.06em;
   font-weight: 600;
 }
+.grouprow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 12px 4px 8px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+.grouprow:hover {
+  background: var(--panel);
+}
+.grouprow.selected {
+  border-left-color: var(--sel);
+}
+.grouprow .box {
+  color: var(--dim);
+  flex: 0 0 auto;
+  font-family: ui-monospace, monospace;
+}
+.grouprow.selected .box {
+  color: var(--sel);
+}
+.grouprow .grouplabel {
+  flex: 1;
+  font-weight: 600;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .item {
   display: flex;
   align-items: flex-start;

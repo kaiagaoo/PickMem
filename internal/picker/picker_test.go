@@ -145,21 +145,34 @@ func TestToggleMarksAndUnmarks(t *testing.T) {
 	}
 }
 
-func TestToggleOnHeaderIsNoop(t *testing.T) {
+func TestToggleOnHeaderSelectsAndDeselectsGroup(t *testing.T) {
 	s, _ := newFixture(t)
 	m, _ := New(s)
-	// Force cursor onto a header.
+	// Land the cursor on the "financial" header (2 notes: salary, bills).
+	var hdrIdx = -1
 	for i, r := range m.visible {
-		if r.kind == kindHeader {
-			m.cursor = i
+		if r.kind == kindHeader && r.group == "financial" {
+			hdrIdx = i
 			break
 		}
 	}
-	before := len(m.selected)
+	if hdrIdx < 0 {
+		t.Fatal("no financial header in visible rows")
+	}
+	m.cursor = hdrIdx
+
+	// First space: selects every note under the group.
 	next, _ := m.Update(spaceKey())
 	m = next.(Model)
-	if len(m.selected) != before {
-		t.Errorf("space on header changed selection: %d -> %d", before, len(m.selected))
+	if len(m.selected) != 2 {
+		t.Fatalf("header toggle should select the group's 2 notes, got %d", len(m.selected))
+	}
+
+	// Second space: clears them again.
+	next, _ = m.Update(spaceKey())
+	m = next.(Model)
+	if len(m.selected) != 0 {
+		t.Errorf("re-toggling a fully-selected header should clear it, got %d", len(m.selected))
 	}
 }
 

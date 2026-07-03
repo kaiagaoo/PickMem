@@ -140,37 +140,106 @@ function renderLenses() {
   }
 }
 
+// gNode is one segment of the group tree, built by splitting each note's
+// group on "/". Mirrors the Go picker's groupNode so the two front-ends
+// render the same shape.
+interface gNode {
+  name: string;
+  fullPath: string;
+  children: Map<string, gNode>;
+  notes: Note[];
+}
+
+function buildTree(notes: Note[]): gNode {
+  const root: gNode = { name: "", fullPath: "", children: new Map(), notes: [] };
+  for (const n of notes) {
+    let cur = root;
+    let path = "";
+    for (const seg of n.group.split("/")) {
+      path = path ? `${path}/${seg}` : seg;
+      let child = cur.children.get(seg);
+      if (!child) {
+        child = { name: seg, fullPath: path, children: new Map(), notes: [] };
+        cur.children.set(seg, child);
+      }
+      cur = child;
+    }
+    cur.notes.push(n);
+  }
+  return root;
+}
+
+// descendantIds collects the ids of every note at or below node.
+function descendantIds(node: gNode): string[] {
+  const ids: string[] = [];
+  const visit = (n: gNode) => {
+    for (const note of n.notes) ids.push(note.id);
+    for (const name of [...n.children.keys()].sort()) visit(n.children.get(name)!);
+  };
+  visit(node);
+  return ids;
+}
+
+type GroupState = "none" | "some" | "all";
+function groupState(ids: string[]): GroupState {
+  if (ids.length === 0) return "none";
+  let n = 0;
+  for (const id of ids) if (state.selected.has(id)) n++;
+  return n === 0 ? "none" : n === ids.length ? "all" : "some";
+}
+
 function renderItems() {
   const el = qs("#items-list");
   el.innerHTML = "";
   if (!state.vault) return;
   const q = state.filter.trim().toLowerCase();
-  const groups = new Map<string, Note[]>();
-  for (const n of state.vault.active) {
-    if (q && !matches(n, q)) continue;
-    const arr = groups.get(n.group) ?? [];
-    arr.push(n);
-    groups.set(n.group, arr);
-  }
-  if (groups.size === 0) {
+  const filtered = state.vault.active.filter((n) => !q || matches(n, q));
+  if (filtered.length === 0) {
     el.innerHTML = `<div class="group-header" style="color:var(--dim);text-transform:none">no matches</div>`;
     return;
   }
-  const sortedGroups = Array.from(groups.keys()).sort();
-  for (const g of sortedGroups) {
-    const header = document.createElement("div");
-    header.className = "group-header";
-    header.textContent = g;
-    el.appendChild(header);
-    for (const n of groups.get(g)!) {
-      el.appendChild(renderItem(n));
+  const root = buildTree(filtered);
+  // Depth-first walk, mirroring the Go picker: a group's own notes at this
+  // depth, then each child group (header at this depth, its contents one
+  // level deeper).
+  const walk = (node: gNode, depth: number) => {
+    for (const n of node.notes) el.appendChild(renderItem(n, depth));
+    for (const name of [...node.children.keys()].sort()) {
+      const child = node.children.get(name)!;
+      el.appendChild(renderGroupHeader(child, depth));
+      walk(child, depth + 1);
     }
-  }
+  };
+  walk(root, 0);
 }
 
-function renderItem(n: Note): HTMLElement {
+function indentPx(depth: number): string {
+  return `${depth * 14 + 8}px`;
+}
+
+function renderGroupHeader(node: gNode, depth: number): HTMLElement {
+  const ids = descendantIds(node);
+  const st = groupState(ids);
+  const row = document.createElement("div");
+  row.className = "grouprow";
+  row.style.paddingLeft = indentPx(depth);
+  if (st !== "none") row.classList.add("selected");
+  const box = document.createElement("span");
+  box.className = "box";
+  box.textContent = st === "all" ? "[x]" : st === "some" ? "[~]" : "[ ]";
+  const label = document.createElement("span");
+  label.className = "grouplabel";
+  label.textContent = node.name;
+  row.appendChild(box);
+  row.appendChild(label);
+  row.addEventListener("click", () => toggleGroup(ids));
+  return row;
+}
+
+function renderItem(n: Note, depth: number): HTMLElement {
   const row = document.createElement("div");
   row.className = "item";
+  row.style.paddingLeft = indentPx(depth);
   if (state.selected.has(n.id)) row.classList.add("selected");
   const box = document.createElement("span");
   box.className = "box";
@@ -204,6 +273,21 @@ function toggle(id: string) {
   if (state.selected.has(id)) state.selected.delete(id);
   else state.selected.add(id);
   state.activeLens = ""; // manual edit breaks the lens
+  renderLenses();
+  renderItems();
+  renderSummary();
+}
+
+// toggleGroup selects every note under a group header, or clears them all
+// if the group is already fully selected — the same behavior as the TUI's
+// header toggle.
+function toggleGroup(ids: string[]) {
+  if (groupState(ids) === "all") {
+    for (const id of ids) state.selected.delete(id);
+  } else {
+    for (const id of ids) state.selected.add(id);
+  }
+  state.activeLens = "";
   renderLenses();
   renderItems();
   renderSummary();

@@ -1,0 +1,103 @@
+{
+  "template_name": "starter",
+  "version": 1,
+  "routing_rules": [
+    { "keyword": "doctor", "group": "about/health" },
+    { "keyword": "medication", "group": "about/health" },
+    { "keyword": "prescription", "group": "about/health" },
+    { "keyword": "diagnosis", "group": "about/health" },
+    { "keyword": "allergic", "group": "about/health" },
+    { "keyword": "allergy", "group": "about/health" },
+    { "keyword": "therapy", "group": "about/health" },
+    { "keyword": "diet", "group": "about/health" },
+    { "keyword": "workout", "group": "about/health" },
+    { "keyword": "exercise", "group": "about/health" },
+
+    { "keyword": "i prefer", "group": "about/preferences" },
+    { "keyword": "favorite", "group": "about/preferences" },
+    { "keyword": "i dislike", "group": "about/preferences" },
+    { "keyword": "pet peeve", "group": "about/preferences" },
+
+    { "keyword": "hometown", "group": "about/identity" },
+    { "keyword": "grew up", "group": "about/identity" },
+    { "keyword": "nationality", "group": "about/identity" },
+    { "keyword": "i speak", "group": "about/identity" },
+
+    { "keyword": "docker", "group": "work/stack" },
+    { "keyword": "kubernetes", "group": "work/stack" },
+    { "keyword": "postgres", "group": "work/stack" },
+    { "keyword": "redis", "group": "work/stack" },
+    { "keyword": "python", "group": "work/stack" },
+    { "keyword": "typescript", "group": "work/stack" },
+    { "keyword": "golang", "group": "work/stack" },
+    { "keyword": "rust", "group": "work/stack" },
+    { "keyword": "react", "group": "work/stack" },
+    { "keyword": "terraform", "group": "work/stack" },
+
+    { "keyword": "colleague", "group": "work/contacts" },
+    { "keyword": "coworker", "group": "work/contacts" },
+    { "keyword": "my manager", "group": "work/contacts" },
+    { "keyword": "client", "group": "work/contacts" },
+    { "keyword": "stakeholder", "group": "work/contacts" },
+
+    { "keyword": "sprint", "group": "work/projects" },
+    { "keyword": "milestone", "group": "work/projects" },
+    { "keyword": "job title", "group": "work/role" },
+    { "keyword": "promoted", "group": "work/role" },
+    { "keyword": "responsibilities", "group": "work/role" },
+
+    { "keyword": "salary", "group": "finance/income" },
+    { "keyword": "paycheck", "group": "finance/income" },
+    { "keyword": "bonus", "group": "finance/income" },
+    { "keyword": "invoice", "group": "finance/income" },
+    { "keyword": "freelance", "group": "finance/income" },
+
+    { "keyword": "utilities", "group": "finance/bills" },
+    { "keyword": "subscription", "group": "finance/bills" },
+    { "keyword": "insurance", "group": "finance/bills" },
+
+    { "keyword": "savings", "group": "finance/goals" },
+    { "keyword": "retirement", "group": "finance/goals" },
+    { "keyword": "budget", "group": "finance/goals" },
+    { "keyword": "invest", "group": "finance/goals" },
+
+    { "keyword": "rent", "group": "home/housing" },
+    { "keyword": "mortgage", "group": "home/housing" },
+    { "keyword": "landlord", "group": "home/housing" },
+    { "keyword": "lease", "group": "home/housing" },
+    { "keyword": "apartment", "group": "home/housing" },
+
+    { "keyword": "appliance", "group": "home/logistics" },
+    { "keyword": "repair", "group": "home/logistics" },
+    { "keyword": "maintenance", "group": "home/logistics" },
+    { "keyword": "my car", "group": "home/logistics" },
+
+    { "keyword": "birthday", "group": "relationships/dates" },
+    { "keyword": "anniversary", "group": "relationships/dates" },
+    { "keyword": "gift", "group": "relationships/dates" },
+
+    { "keyword": "my mom", "group": "relationships/family" },
+    { "keyword": "my dad", "group": "relationships/family" },
+    { "keyword": "my mother", "group": "relationships/family" },
+    { "keyword": "my father", "group": "relationships/family" },
+    { "keyword": "my sister", "group": "relationships/family" },
+    { "keyword": "my brother", "group": "relationships/family" },
+    { "keyword": "my partner", "group": "relationships/family" },
+    { "keyword": "my spouse", "group": "relationships/family" },
+
+    { "keyword": "my friend", "group": "relationships/friends" },
+
+    { "keyword": "studying", "group": "learning/topics" },
+    { "keyword": "course", "group": "learning/topics" },
+    { "keyword": "lecture", "group": "learning/topics" },
+
+    { "keyword": "book", "group": "learning/resources" },
+    { "keyword": "paper", "group": "learning/resources" },
+    { "keyword": "arxiv", "group": "learning/resources" },
+    { "keyword": "podcast", "group": "learning/resources" },
+    { "keyword": "tutorial", "group": "learning/resources" },
+
+    { "keyword": "side project", "group": "projects" },
+    { "keyword": "hobby", "group": "projects" }
+  ]
+}

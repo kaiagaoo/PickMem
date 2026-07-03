@@ -213,7 +213,19 @@ func (m *Model) toggleAtCursor() {
 		return
 	}
 	r := m.visible[m.cursor]
-	if !r.selectable() {
+	if r.kind == kindHeader {
+		// A group header toggles its whole subtree: if everything under
+		// it is already selected, clear it; otherwise select all of it.
+		if groupState(m.selected, r.descendants) == checkAll {
+			for _, id := range r.descendants {
+				delete(m.selected, id)
+			}
+		} else {
+			for _, id := range r.descendants {
+				m.selected[id] = true
+			}
+		}
+		m.activeLens = ""
 		return
 	}
 	id := r.note.ID
@@ -224,6 +236,37 @@ func (m *Model) toggleAtCursor() {
 	}
 	// Custom selection breaks the "this is a lens" state.
 	m.activeLens = ""
+}
+
+// checkState is a group header's tri-state selection.
+type checkState int
+
+const (
+	checkNone checkState = iota // no descendant selected
+	checkSome                   // some but not all
+	checkAll                    // every descendant selected
+)
+
+// groupState reports how many of ids are in selected. An empty id list
+// (a group with no notes at all) reads as checkNone.
+func groupState(selected map[string]bool, ids []string) checkState {
+	if len(ids) == 0 {
+		return checkNone
+	}
+	n := 0
+	for _, id := range ids {
+		if selected[id] {
+			n++
+		}
+	}
+	switch {
+	case n == 0:
+		return checkNone
+	case n == len(ids):
+		return checkAll
+	default:
+		return checkSome
+	}
 }
 
 // ensureVisible scrolls the viewport so the cursor stays inside it.
@@ -418,26 +461,42 @@ func (m Model) viewList() string {
 	return b.String()
 }
 
+// rowIndent returns leading whitespace for a row at the given depth. Both
+// header and note rows use it, so a note sits one level in from its group
+// header.
+func rowIndent(depth int) string {
+	return strings.Repeat("  ", depth+1)
+}
+
 func (m Model) renderRow(r row, isCursor bool) string {
 	if r.kind == kindHeader {
-		return m.theme.GroupHeader.Render("  " + r.group)
+		var glyph string
+		switch groupState(m.selected, r.descendants) {
+		case checkAll:
+			glyph = m.theme.Checkbox.Render("[x]")
+		case checkSome:
+			glyph = m.theme.Checkbox.Render("[~]")
+		default:
+			glyph = m.theme.CheckboxDim.Render("[ ]")
+		}
+		line := rowIndent(r.depth) + glyph + " " + r.header
+		if isCursor {
+			return m.theme.Cursor.Render(line)
+		}
+		return m.theme.GroupHeader.Render(line)
 	}
-	glyphFull := "[x]"
-	glyphEmpty := "[ ]"
 	checked := m.selected[r.note.ID]
 	var glyph string
 	if checked {
-		glyph = m.theme.Checkbox.Render(glyphFull)
+		glyph = m.theme.Checkbox.Render("[x]")
 	} else {
-		glyph = m.theme.CheckboxDim.Render(glyphEmpty)
+		glyph = m.theme.CheckboxDim.Render("[ ]")
 	}
-	line := "    " + glyph + " " + r.note.Label
+	line := rowIndent(r.depth) + glyph + " " + r.note.Label
 	if len(r.note.Tags) > 0 {
 		line += "  " + m.theme.Tag.Render("#"+strings.Join(r.note.Tags, " #"))
 	}
 	switch {
-	case isCursor && checked:
-		return m.theme.Cursor.Render(line)
 	case isCursor:
 		return m.theme.Cursor.Render(line)
 	case checked:

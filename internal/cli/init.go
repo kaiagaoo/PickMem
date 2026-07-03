@@ -11,13 +11,13 @@ import (
 )
 
 func newInitCmd() *cobra.Command {
-	var templateName string
+	var bare bool
 	var force bool
 
 	cmd := &cobra.Command{
 		Use:   "init <path>",
 		Short: "Scaffold a new PickMem vault at <path>",
-		Long:  "Creates the pickmem/ subdirectory with inbox/, config.json, lenses.json, and active.json. Optionally copies a starter taxonomy (--template). Records the vault path in the user config so subsequent commands don't need --vault.",
+		Long:  "Creates the pickmem/ subdirectory with inbox/, config.json, lenses.json, and active.json, and lays down the starter taxonomy (group folders + routing rules + a vault README). Pass --bare for an empty vault instead. Records the vault path in the user config so subsequent commands don't need --vault.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			target, err := filepath.Abs(args[0])
@@ -30,16 +30,18 @@ func newInitCmd() *cobra.Command {
 
 			existed := hasExistingVault(target)
 			if existed && !force {
-				fmt.Fprintf(cmd.OutOrStdout(), "Vault already initialized at %s (use --force to reapply template).\n", target)
+				fmt.Fprintf(cmd.OutOrStdout(), "Vault already initialized at %s (use --force to reapply the starter taxonomy).\n", target)
 			}
+
+			applyTemplate := !bare && (!existed || force)
 
 			// Apply the template BEFORE vault.Init so the template's
 			// pickmem/config.json (with routing rules) lands first.
 			// vault.Init won't overwrite it — it only writes defaults for
 			// files that don't already exist.
-			if templateName != "" && (!existed || force) {
-				if err := templates.Apply(templateName, target); err != nil {
-					return fmt.Errorf("apply template %q: %w", templateName, err)
+			if applyTemplate {
+				if err := templates.Apply(templates.DefaultName, target); err != nil {
+					return fmt.Errorf("apply starter taxonomy: %w", err)
 				}
 			}
 			s, err := vault.Init(target)
@@ -48,12 +50,12 @@ func newInitCmd() *cobra.Command {
 			}
 			// Stamp the template name onto whatever config is now on disk
 			// (either the template's or the freshly-written default).
-			if templateName != "" && (!existed || force) {
+			if applyTemplate {
 				cfg, err := s.LoadConfig()
 				if err != nil {
 					return err
 				}
-				cfg.TemplateName = templateName
+				cfg.TemplateName = templates.DefaultName
 				if err := s.SaveConfig(cfg); err != nil {
 					return err
 				}
@@ -65,15 +67,15 @@ func newInitCmd() *cobra.Command {
 			}
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Initialized PickMem vault at %s\n", target)
-			if templateName != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "Applied template: %s\n", templateName)
+			if applyTemplate {
+				fmt.Fprintln(cmd.OutOrStdout(), "Laid down the starter taxonomy — see README.md in the vault for the map.")
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), "Set as default vault. Try: pickmem add --label ... --group ...")
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&templateName, "template", "t", "", "starter taxonomy template (personal|developer|researcher)")
-	cmd.Flags().BoolVar(&force, "force", false, "re-apply template even if the vault is already initialized")
+	cmd.Flags().BoolVar(&bare, "bare", false, "skip the starter taxonomy; create an empty vault")
+	cmd.Flags().BoolVar(&force, "force", false, "re-apply the starter taxonomy even if the vault is already initialized")
 	return cmd
 }
 

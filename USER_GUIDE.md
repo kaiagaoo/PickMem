@@ -124,7 +124,7 @@ Your **vault** is a folder on your disk. PickMem uses it as its only source of t
 Recommended if you already have an Obsidian vault you love and want to keep it separate.
 
 ```bash
-pickmem init ~/ObsidianVault/pickmem-memory --template personal
+pickmem init ~/ObsidianVault/pickmem-memory
 ```
 
 This creates a `pickmem-memory/` subfolder inside your existing vault. Everything else in your vault stays untouched.
@@ -134,7 +134,7 @@ This creates a `pickmem-memory/` subfolder inside your existing vault. Everythin
 Cleaner if you're starting fresh.
 
 ```bash
-pickmem init ~/PickMemVault --template personal
+pickmem init ~/PickMemVault
 ```
 
 Then in Obsidian: **File → Open folder as vault** → select `~/PickMemVault`.
@@ -144,22 +144,30 @@ Then in Obsidian: **File → Open folder as vault** → select `~/PickMemVault`.
 If you're not worried about organization mixing:
 
 ```bash
-pickmem init ~/ObsidianVault --template personal
+pickmem init ~/ObsidianVault
 ```
 
-PickMem drops a `pickmem/` metadata folder at the root and adds group folders (`financial/`, `home/`, etc.) alongside your existing notes. **PickMem never edits notes it didn't create**, so your existing notes are safe.
+PickMem drops a `pickmem/` metadata folder at the root and adds group folders (`about/`, `work/`, `finance/`, etc.) alongside your existing notes. **PickMem never edits notes it didn't create**, so your existing notes are safe.
 
-### About templates
+### The starter taxonomy
 
-The `--template` flag seeds a starter taxonomy — folder structure + a `pickmem/config.json` with routing rules. Three ship in the box:
+`pickmem init` lays down a ready-to-use taxonomy by default — a tree of group folders, a `pickmem/config.json` seeded with keyword→group routing rules, and a `README.md` at the vault root that maps out every group (PickMem ignores that README, since it has no frontmatter — it's just a guide for you in Obsidian).
 
-- **`personal`** — `personal/`, `health/`, `home/`, `relationships/`. Rules for `doctor`, `mortgage`, `rent`, `gift`, `birthday`.
-- **`developer`** — `projects/`, `stack/`, `learning/`, `tools/`. Rules for `python`, `docker`, `kubernetes`, `postgres`, etc.
-- **`researcher`** — `courses/`, `papers/`, `advisors/`, `deadlines/`. Rules for `paper`, `arxiv`, `advisor`.
+The groups nest by life area:
 
-Pick the one that best matches how you think about your memory. You can rename or reorganize folders later — **frontmatter's `group:` field is what PickMem actually reads**, not the folder name.
+| Top level | Sub-groups |
+|-----------|-----------|
+| `about/` | `identity`, `preferences`, `health` |
+| `work/` | `role`, `projects`, `stack`, `contacts` |
+| `finance/` | `income`, `bills`, `goals` |
+| `home/` | `housing`, `logistics` |
+| `relationships/` | `family`, `friends`, `dates` |
+| `learning/` | `topics`, `resources` |
+| `projects/` | *(flat — side projects, hobbies)* |
 
-You can skip the template entirely if you want empty group folders: `pickmem init ~/PickMemVault`.
+Don't feel boxed in: you can rename, nest deeper, or delete any of these later — **frontmatter's `group:` field is what PickMem actually reads**, not the folder name (see §12). Empty groups you never use won't even show up in the picker.
+
+Want to start from nothing instead? `pickmem init ~/PickMemVault --bare` gives you an empty vault with no taxonomy.
 
 After `init`, PickMem remembers the vault path in a config file (`~/.config/pickmem/config.json`), so most subsequent commands don't need `--vault`.
 
@@ -549,7 +557,7 @@ Quick reference — the full `--help` on any command has more detail.
 
 ### Vault + memory
 ```
-pickmem init <path> [--template personal|developer|researcher] [--force]
+pickmem init <path> [--bare] [--force]      # applies the starter taxonomy unless --bare
 pickmem add --label "…" --group … [--body "…" | --file … | stdin | $EDITOR] [--tags a,b] [--inbox]
 pickmem list [--group prefix] [--pending] [--all]
 pickmem show <id-or-suffix> [--raw]

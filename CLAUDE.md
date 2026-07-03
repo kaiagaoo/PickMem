@@ -12,7 +12,7 @@ Context for future Claude Code sessions working in this repo.
 
 | Milestone | Status | Notes |
 |-----------|--------|-------|
-| M1 — Vault Store + CLI | ✅ Done | `init`, `add`, `list`, `show`, `edit`, `rm`; 3 templates; vault package + tests. |
+| M1 — Vault Store + CLI | ✅ Done | `init`, `add`, `list`, `show`, `edit`, `rm`; single starter template auto-applied (`--bare` to skip); vault package + tests. |
 | M2 — TUI picker | ✅ Done | `pickmem pick` — grouped multi-select, lens overlay, fuzzy filter, save-as-lens, Nord/plain themes. |
 | M3 — MCP server | ✅ Done | `pickmem serve` (stdio) exposing `pickmem://active` + 4 tools; `install`/`uninstall` for Claude Desktop and Cursor. |
 | M4 — Ingestion + inbox review | ✅ Done | `pickmem import <file>` (JSON/bullets/paragraphs auto-detect); `pickmem review` (bulk-select TUI); rules + optional Anthropic AI assistant (split into atomic claims, propose new groups, suggest merges into existing notes) behind `--allow-ai` or an interactive prompt. |
@@ -33,7 +33,7 @@ internal/
   ingest/             # text.go (shared split/hash/label), parse.go (JSON/bullets/paragraphs), import.go (pipeline)
   routing/            # Router + Classifier interface, RulesClassifier, AIClassifier (Anthropic Messages API)
   cli/                # cobra subcommands + vault-path discovery
-templates/            # personal, developer, researcher (embedded via go:embed)
+templates/            # single "starter" taxonomy (embedded via go:embed); auto-applied by init unless --bare
 demo/                 # VHS tapes (pick.tape → pick.gif)
 extension/            # M5: MV3 TypeScript Chrome extension
   src/
@@ -93,7 +93,7 @@ Full manual test checklist lives in [extension/README.md](extension/README.md#ma
 
 ```bash
 go build -o /tmp/pickmem ./cmd/pickmem
-VAULT=$(mktemp -d) && /tmp/pickmem init "$VAULT" --template developer
+VAULT=$(mktemp -d) && /tmp/pickmem init "$VAULT"   # starter taxonomy auto-applied
 
 # Point it at any of these shapes — auto-detect picks the right parser:
 #   ["memory 1", "memory 2"]                       bare JSON array
@@ -262,7 +262,7 @@ go build -o /tmp/pickmem ./cmd/pickmem
 
 # fresh vault (use a tmp dir; init records it as your default)
 VAULT=$(mktemp -d)
-/tmp/pickmem init "$VAULT" --template personal
+/tmp/pickmem init "$VAULT"
 
 # subsequent commands use the recorded vault
 /tmp/pickmem add --label "salary" --group financial --tags money,recurring --body "monthly base \$8k"

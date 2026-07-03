@@ -1,7 +1,7 @@
-// Package templates ships a small set of starter taxonomies. Each template
-// is a tree of empty group folders plus a pickmem/config.json seeded with
-// routing rules — enough scaffolding that a new user has somewhere for
-// their first note to land.
+// Package templates ships the starter taxonomy: a tree of group folders,
+// a pickmem/config.json seeded with routing rules, and a vault README —
+// enough scaffolding that a new user has somewhere for their first note
+// to land and a rough map of how to organize.
 package templates
 
 import (
@@ -15,7 +15,13 @@ import (
 	"strings"
 )
 
-//go:embed all:personal all:developer all:researcher
+// DefaultName is the template `pickmem init` applies unless --bare is
+// passed. There's exactly one starter template; the one-vault strategy
+// (see PROPOSAL.md) made per-persona templates unnecessary — nested
+// groups cover personal/work/research in a single taxonomy instead.
+const DefaultName = "starter"
+
+//go:embed all:starter
 var files embed.FS
 
 // Available returns the names of shipped templates, sorted.
