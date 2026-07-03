@@ -35,7 +35,7 @@ type Router struct {
 
 // New returns a Router with the given classifier chain. First non-empty
 // suggestion wins. Nil entries are ignored so callers can conditionally
-// append (e.g., AI classifier only when --allow-ai).
+// append classifiers.
 func New(cs ...Classifier) *Router {
 	out := make([]Classifier, 0, len(cs))
 	for _, c := range cs {

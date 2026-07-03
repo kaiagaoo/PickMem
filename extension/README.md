@@ -34,6 +34,7 @@ Click the toolbar icon. On first open you'll see **Choose vault folder…** — 
 - **Toggle items** — click checkboxes to select memory items. Selection breaks any active lens (matches the TUI behavior).
 - **Activate a lens** — click a lens chip. Selection is replaced with the lens's items.
 - **Save a lens** — type a name in the bottom field and click **Save**. Writes to `pickmem/lenses.json`.
+- **Add a memory** — click **+ Add memory**, fill in label / group / tags / text, and save. Writes a new active note into the group folder (same as `pickmem add`). Create-only: the extension never rewrites an existing note.
 - **Copy** — assembles the block and writes to clipboard. Also persists the selection to `pickmem/active.json`.
 - **Insert** — same as Copy, plus messages the active tab to prepend the block into the chat's input box (existing draft text is preserved below).
 
@@ -90,7 +91,7 @@ Run through this before shipping a new build:
 
 **Not on the Chrome Web Store (yet).** M5's spec pins distribution to load-unpacked. Web Store submission is deferred until the permission surface is stable and the target audience shifts to non-developers. The store's review process specifically scrutinizes the combination we ship — local file access + content scripts on the three big AI sites — so we're deferring the review overhead until we're ready to answer it in depth.
 
-**Not a notes editor.** The extension only reads notes and only writes `lenses.json` + `active.json`. All note creation and mutation lives in the CLI (`pickmem add`, `pickmem review`), because the create-only invariant lives in the Go store and can't be enforced from the browser.
+**Creates notes, never edits them.** The extension can create a new note (via **+ Add memory**) and writes `lenses.json` + `active.json`. It never rewrites an existing note — editing lives in Obsidian or the CLI, which hold the content-hash guard that prevents clobbering a note changed elsewhere. New-note writing is create-only and safe from the browser; in-place edits are not, which is why they stay out.
 
 **Not a memory server.** No network calls. No sync. No "smart" auto-injection. The block only reaches a model when the user clicks Insert (or pastes what they Copied).
 

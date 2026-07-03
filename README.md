@@ -53,7 +53,7 @@ editor preference (about/preferences): uses vim; don't suggest vscode
   - **Chrome extension** that injects into ChatGPT, Claude.ai, and Gemini — plus a clipboard fallback that works anywhere.
 - **Grouped, nested picker** (TUI and browser) with fuzzy filter, tri-state group checkboxes, and saved **lenses** for recurring tasks.
 - **Bulk ingest.** Import a memory export or a plain list; items stage to an inbox for review before anything goes live.
-- **Local-first and private.** No account, no telemetry, no network calls unless you explicitly opt into an AI helper.
+- **Local-first and private.** No account, no telemetry, no network calls — everything runs on your machine.
 
 ---
 
@@ -117,7 +117,7 @@ Full walkthrough: **[USER_GUIDE.md](USER_GUIDE.md)**.
 
 **MCP (native clients).** `pickmem serve` is a stdio MCP server exposing a `pickmem://active` resource plus tools `get_active_memory`, `list_lenses`, `use_lens`, and `propose_memories` (which stages candidate memories to your inbox — it never activates anything). `pickmem install claude-desktop|cursor` writes the config entry for you; Cline is a one-line manual setup.
 
-**Chrome extension.** Grant it your vault folder once (File System Access API), pick items in the popup, and **Insert** prepends the assembled block into the chat box on supported sites — or **Copy** to paste anywhere. The extension only ever writes `active.json` and `lenses.json`; it never edits your notes.
+**Chrome extension.** Grant it your vault folder once (File System Access API), pick items in the popup, and **Insert** prepends the assembled block into the chat box on supported sites — or **Copy** to paste anywhere. You can also **add** a new memory from the popup. It only ever creates notes (and writes `active.json` / `lenses.json`) — editing existing notes stays in Obsidian or the CLI.
 
 ---
 
@@ -125,7 +125,7 @@ Full walkthrough: **[USER_GUIDE.md](USER_GUIDE.md)**.
 
 These are enforced invariants, not aspirations:
 
-- **Local-first, no exceptions.** Your vault stays on disk. No network by default; AI features are opt-in behind an explicit flag and your own API key.
+- **Local-first, no exceptions.** Your vault stays on disk and PickMem makes no network calls.
 - **Create-only.** PickMem creates notes and moves inbox items into folders. It **never rewrites a note you authored** — it verifies on-disk content before touching any file it owns, and refuses if you changed it.
 - **The user decides relevance.** No silent auto-injection. Auto-extraction only ever *proposes* into an inbox; nothing goes live without your review.
 - **Deterministic lookup, not RAG.** A picked item is fetched by id — an exact read, not a similarity guess.
@@ -151,11 +151,11 @@ internal/
   picker/          Bubble Tea TUI (grouped tree picker + inbox review)
   mcp/             MCP server exposing the picked slice
   ingest/          import parsers + staging pipeline
-  routing/         keyword rules + optional AI classifier
+  routing/         keyword group-routing rules
   install/         client config writers (Claude Desktop, Cursor)
 templates/         starter taxonomy (embedded)
 extension/         MV3 TypeScript Chrome extension
-docs, demo/        VHS tape, design docs
+demo/              VHS tape (pick.tape)
 ```
 
 ## Development
@@ -173,7 +173,7 @@ npm run build        # → extension/dist/
 
 ## Status
 
-The CLI, TUI picker, MCP server, import/review pipeline, and Chrome extension are all working and tested. AI-assisted import routing is optional, off by default, and only ever proposes from your existing taxonomy. This is an actively evolving personal project; the vault format — Markdown-with-frontmatter notes plus a few small JSON files — is the stable contract shared between the Go binary and the extension.
+The CLI, TUI picker, MCP server, import/review pipeline, and Chrome extension are all working and tested. This basic release routes imported and proposed memories with keyword rules; AI-assisted extraction (splitting messy text into clean, atomic facts) is planned for a future update. This is an actively evolving personal project; the vault format — Markdown-with-frontmatter notes plus a few small JSON files — is the stable contract shared between the Go binary and the extension.
 
 ## Documentation
 

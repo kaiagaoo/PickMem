@@ -13,6 +13,7 @@ import {
 import { readVault, type Vault } from "../vault/reader.ts";
 import { assemble } from "../vault/assemble.ts";
 import { saveActive, saveLenses, upsertLens } from "../vault/writer.ts";
+import { createNote } from "../vault/writenote.ts";
 import { copyToClipboard } from "../lib/clipboard.ts";
 import type { Lens, Note } from "../vault/types.ts";
 import {
@@ -99,6 +100,14 @@ function wireButtons() {
 
   qs("#btn-copy").addEventListener("click", onCopy);
   qs("#btn-insert").addEventListener("click", onInsert);
+
+  qs("#btn-add-toggle").addEventListener("click", () => {
+    const form = qs("#add-form");
+    form.classList.toggle("hidden");
+    if (!form.classList.contains("hidden")) qs<HTMLInputElement>("#add-label").focus();
+  });
+  qs("#btn-add-cancel").addEventListener("click", closeAddForm);
+  qs("#btn-add-save").addEventListener("click", onAddNote);
 }
 
 async function refreshVault() {
@@ -325,6 +334,61 @@ async function saveCurrentAsLens() {
   }
 }
 
+// ---------- add memory ----------
+
+// populateGroupOptions fills the group <datalist> with the vault's
+// existing group paths, so the user can pick one or type a new nested
+// path.
+function populateGroupOptions() {
+  const dl = qs("#group-options");
+  dl.innerHTML = "";
+  if (!state.vault) return;
+  const groups = new Set<string>();
+  for (const n of state.vault.active) groups.add(n.group);
+  for (const g of [...groups].sort()) {
+    const opt = document.createElement("option");
+    opt.value = g;
+    dl.appendChild(opt);
+  }
+}
+
+function closeAddForm() {
+  qs("#add-form").classList.add("hidden");
+  qs<HTMLInputElement>("#add-label").value = "";
+  qs<HTMLInputElement>("#add-group").value = "";
+  qs<HTMLInputElement>("#add-tags").value = "";
+  qs<HTMLTextAreaElement>("#add-body").value = "";
+}
+
+async function onAddNote() {
+  if (!state.handle) return;
+  const label = qs<HTMLInputElement>("#add-label").value.trim();
+  const group = qs<HTMLInputElement>("#add-group").value.trim();
+  const body = qs<HTMLTextAreaElement>("#add-body").value.trim();
+  const tags = qs<HTMLInputElement>("#add-tags")
+    .value.split(",")
+    .map((t) => t.trim())
+    .filter((t) => t !== "");
+
+  if (!label || !group || !body) {
+    toast("label, group, and text are all required", true);
+    return;
+  }
+  try {
+    const note = await createNote(state.handle, { label, group, body, tags });
+    closeAddForm();
+    await refreshVault(); // re-read so the new note shows in the tree
+    // Select the just-added note so it's ready to deliver.
+    state.selected.add(note.id);
+    state.activeLens = "";
+    renderItems();
+    renderSummary();
+    toast(`Added "${label}"`);
+  } catch (e) {
+    toast(`add failed: ${String(e)}`, true);
+  }
+}
+
 async function onCopy() {
   const block = buildBlock();
   await copyToClipboard(block);
@@ -481,7 +545,9 @@ function showLoaded() {
   qs("#vault-empty").classList.add("hidden");
   qs("#lenses").classList.remove("hidden");
   qs("#items").classList.remove("hidden");
+  qs("#add").classList.remove("hidden");
   qs("#save-lens").classList.remove("hidden");
+  populateGroupOptions();
 }
 
 let toastTimer: number | undefined;

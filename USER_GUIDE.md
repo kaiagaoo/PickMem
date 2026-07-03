@@ -8,20 +8,29 @@ PickMem keeps your memory in a plain folder of Markdown files (an Obsidian vault
 
 ## Table of contents
 
-1. [What is PickMem?](#1-what-is-pickmem)
-2. [Prerequisites](#2-prerequisites)
-3. [Build and install the CLI](#3-build-and-install-the-cli)
-4. [Create your first vault](#4-create-your-first-vault)
-5. [Add memories](#5-add-memories)
-6. [Pick what the model sees](#6-pick-what-the-model-sees)
-7. [Use PickMem with Claude Desktop (MCP)](#7-use-pickmem-with-claude-desktop-mcp)
-8. [Use PickMem in the browser (extension)](#8-use-pickmem-in-the-browser-extension)
-9. [Import a batch of memories](#9-import-a-batch-of-memories)
-10. [Review the inbox](#10-review-the-inbox)
-11. [Lenses](#11-lenses)
-12. [Editing and organizing in Obsidian](#12-editing-and-organizing-in-obsidian)
-13. [Command reference](#13-command-reference)
-14. [Troubleshooting](#14-troubleshooting)
+- [PickMem — User Guide](#pickmem--user-guide)
+  - [Table of contents](#table-of-contents)
+  - [1. What is PickMem?](#1-what-is-pickmem)
+  - [2. Prerequisites](#2-prerequisites)
+  - [3. Build and install the CLI](#3-build-and-install-the-cli)
+  - [4. Create your first vault](#4-create-your-first-vault)
+  - [5. Add memories](#5-add-memories)
+    - [Inspecting](#inspecting)
+    - [Editing / deleting](#editing--deleting)
+  - [6. Pick what the model sees](#6-pick-what-the-model-sees)
+  - [7. Use PickMem with Claude Desktop (MCP)](#7-use-pickmem-with-claude-desktop-mcp)
+    - [Recommended Claude Desktop settings](#recommended-claude-desktop-settings)
+  - [8. Use PickMem in the browser (extension)](#8-use-pickmem-in-the-browser-extension)
+    - [Build and load](#build-and-load)
+    - [Connect your vault](#connect-your-vault)
+    - [Pick and deliver](#pick-and-deliver)
+  - [9. Import a batch of memories](#9-import-a-batch-of-memories)
+    - [Undoing an import](#undoing-an-import)
+  - [10. Review the inbox](#10-review-the-inbox)
+  - [11. Lenses](#11-lenses)
+  - [12. Editing and organizing in Obsidian](#12-editing-and-organizing-in-obsidian)
+  - [13. Command reference](#13-command-reference)
+  - [14. Troubleshooting](#14-troubleshooting)
 
 ---
 
@@ -47,7 +56,7 @@ Both channels read the same vault and produce the same context block, so switchi
 - **Node.js 20+ and npm** — only if you want the Chrome extension.
 - **Chrome or another Chromium browser** — only for the extension.
 
-You do **not** need Docker, an account, or an API key. AI features are entirely optional (see §9).
+You do **not** need Docker, an account, an API key, or a network connection — everything runs locally.
 
 ---
 
@@ -237,7 +246,7 @@ Then fully quit and reopen the client. The server it launches is `pickmem serve`
 | `get_active_memory` | Returns the same block via a tool call |
 | `list_lenses` | Lists your saved lenses (`name`, item count) |
 | `use_lens(name)` | Activates a lens — rewrites `active.json` and returns the new block |
-| `propose_memories(chat_text)` | Extracts candidate memories from chat text and **stages them to the inbox as pending**. Never activates anything; you still review + accept. Rules-based extraction only. |
+| `propose_memories(chat_text)` | Extracts candidate memories from chat text and **stages them to the inbox as pending**. Never activates anything; you still review + accept. Rules-based extraction. |
 
 **Testing it:** run `pickmem pick`, select a few items, confirm. In a new Claude Desktop conversation, ask something that depends on your context. The server reloads the vault on every call, so a fresh pick (or an Obsidian edit) is visible without restarting.
 
@@ -258,10 +267,8 @@ With no selection it's `--- pickmem: no memory selected ---`.
 Two client-side settings make this reliable. Neither adds anything beyond what you picked — they just remove friction:
 
 1. **Tool permissions → Always allow.** Settings → Connectors → pickmem → Tool access. Set all four tools to *Always allow* so Claude doesn't stop to confirm each read. (One tool may default to "Ask" on first connect — that's Claude Desktop's own behavior, not a PickMem setting; flip it too.)
-2. **A custom instruction.** Settings → Profile → personal preferences, add something like:
+2. **A custom instruction. (Optional)** Settings → Profile → personal preferences, add something like:
    > *Before answering anything that might depend on my personal context or preferences, check my PickMem active memory first (`get_active_memory` or the `pickmem://active` resource). If it's empty or unrelated, say so rather than guessing.*
-
-   Without this, Claude often won't check memory unless you tell it to.
 
 ---
 
@@ -290,11 +297,13 @@ The popup shows your groups and notes as the same **tree with group checkboxes**
 - **Insert** — on ChatGPT / Claude.ai / Gemini, prepends the assembled block into the chat's input box (your existing draft is preserved). The header shows the detected site and whether the input was found.
 - **Copy** — puts the assembled block on your clipboard. Works on **any** site, and even with no vault connected.
 
-The extension writes only `pickmem/active.json` and `pickmem/lenses.json`. It never creates or edits memory notes — that's the CLI's job.
+### Add a memory from the popup
+
+Click **+ Add memory** to open a small form: a **label** (short title), a **group** (type a new path or pick an existing one from the dropdown), optional **tags**, and the **memory text**. Saving writes a new active note into that group folder — the same result as `pickmem add` — and selects it for you. The new note appears immediately in the tree above.
+
+The extension only ever **creates** notes (and writes `pickmem/active.json` / `pickmem/lenses.json`). It never rewrites an existing note — editing stays in Obsidian or the CLI, which hold the safeguard that prevents clobbering a note you changed elsewhere.
 
 If a site changes its markup and the input can't be found, the popup says so and **Copy** still works.
-
-> **Switching vaults / adapters:** the extension remembers one vault folder and there's no in-UI "switch vault" button yet. To point it at a different folder, clear its stored handle — open the popup, right-click → Inspect → Application → IndexedDB → delete the `pickmem` database — then reopen the popup and choose the new folder. Supported injection sites are ChatGPT, Claude.ai, and Gemini; everything else uses Copy.
 
 ---
 
@@ -306,7 +315,7 @@ To bring in many items at once — a memory export from another assistant, or yo
 pickmem import memories.txt
 ```
 
-The parser auto-detects the file shape:
+The parser auto-detects the file shape and takes each chunk as one item:
 
 - JSON array of strings: `["memory 1", "memory 2"]`
 - JSON array of objects with a `memory`/`text`/`content`/`body` field
@@ -314,29 +323,18 @@ The parser auto-detects the file shape:
 - a Markdown bullet/numbered list
 - blank-line-separated paragraphs
 
-Override detection with `--format json|bullets|paragraphs|auto` (`chatgpt`, `claude`, and `list` are aliases for `auto`).
-
-Output:
+Override detection with `--format json|bullets|paragraphs|auto`. Each item is routed with your vault's keyword rules (`pickmem/config.json`, substring → group, first match wins), and de-duplicated on a content hash against everything already in the vault.
 
 ```
-Parsed:    47      # items the parser recognized
+Parsed:    47      # chunks the parser recognized
 Staged:    47      # staged to the inbox as pending
-Routed:    18      # of those, how many got a suggested_group from the routing rules
-Duplicate: 0       # skipped because their content already exists in the vault
+Routed:    18      # of those, how many got a suggested_group from the rules
+Duplicate: 0       # skipped: content already in the vault
 ```
 
-Items are de-duplicated on a content hash against everything already in the vault (active and pending). Routing uses your vault's rules (`pickmem/config.json`, keyword substring → group, first match wins).
+Import works best when your file is already roughly one memory per line/paragraph. Each chunk is staged as-is, then you clean up in review.
 
-### Optional AI routing
-
-For items the keyword rules don't match, an Anthropic classifier can suggest a group. It is **off by default** and requires the `--allow-ai` flag *and* an `ANTHROPIC_API_KEY`:
-
-```bash
-export ANTHROPIC_API_KEY=sk-ant-…
-pickmem import memories.txt --allow-ai        # optional: --ai-model <model-id>
-```
-
-The AI only ever picks from groups **that already exist in your vault** — it can't invent new categories. If the key is missing, the API errors, or nothing fits, PickMem falls back to rules-only for that item; an AI problem never fails the import.
+> AI-assisted extraction (splitting messy text into clean, atomic facts) is planned for a future release. This version routes with keyword rules only.
 
 Then review what landed:
 
@@ -344,6 +342,16 @@ Then review what landed:
 pickmem list --pending
 pickmem review
 ```
+
+### Undoing an import
+
+An import only ever stages to the inbox — nothing is active yet — so to undo one, you just clear the pending items. They're machine-managed staging files (not notes you authored), so deleting them is safe:
+
+```bash
+rm ~/PickMemVault/pickmem/inbox/*.md    # substitute your vault path
+```
+
+That removes **all** pending inbox items, so only do the wildcard if the inbox holds just this import; otherwise delete the specific files. Your active notes and everything else in the vault are untouched. (The in-tool alternative is `pickmem review` and rejecting each with `r`, but for a big import the `rm` is faster.)
 
 ---
 
@@ -395,7 +403,7 @@ Every memory note is a normal Markdown file with a YAML frontmatter block. Open 
 
 **Create-only.** PickMem only ever creates notes and moves inbox notes into group folders. It never rewrites a note you authored; before updating any file it owns, it checks that the on-disk content still matches what it last wrote, and refuses if you've changed it since. So your Obsidian edits are safe.
 
-**Ids are assigned by the CLI.** Each note needs a stable `id` in its frontmatter, and `pickmem add` / `import` generate it. Because of the create-only rule, PickMem won't backfill an id into a file you hand-create. Practical consequences:
+**Ids are assigned by PickMem.** Each note needs a stable `id` in its frontmatter, and `pickmem add`, `import`, and the extension's **+ Add memory** form all generate it for you. Because of the create-only rule, PickMem won't backfill an id into a file you hand-create. Practical consequences:
 
 - A note with **no `---` frontmatter block** is ignored by PickMem (a normal Obsidian note — fine, just not a memory item).
 - A note with a **complete, valid frontmatter** (including a real id) is picked up — but generating a valid id by hand is impractical.
@@ -428,7 +436,7 @@ pickmem install <claude-desktop|cursor> [--dry-run] [--name <n>] [--bin <path>]
 pickmem uninstall <claude-desktop|cursor> [--name <n>]
 
 pickmem import <file> [--format auto|json|bullets|paragraphs]
-              [--allow-ai] [--ai-model <id>]   # stages to inbox; --allow-ai needs $ANTHROPIC_API_KEY
+              # stages parsed items to the inbox as pending
 pickmem review                                 # TUI to accept/reject/reassign inbox items
 
 --vault <path>                                 # global override on any command
@@ -448,11 +456,9 @@ pickmem review                                 # TUI to accept/reject/reassign i
 
 **`pickmem import` staged 0 items** — the parser didn't recognize the file shape. Try an explicit `--format bullets` or `--format paragraphs`, and check the file isn't empty.
 
-**`--allow-ai` didn't change anything** — it needs both the flag and `ANTHROPIC_API_KEY`. It also only proposes groups that already exist in your vault; if you have few groups, accept a couple of items first so there's a taxonomy to route into.
-
 **Extension shows "input not found"** — the target site changed its markup. Insert is disabled but **Copy** still works; the adapter selector is a one-line fix in `extension/src/adapters/index.ts`.
 
-**Extension keeps opening the same old vault** — it stores one folder handle in IndexedDB. To switch, clear it via DevTools (§8) or remove and re-load the unpacked extension.
+**Extension keeps opening the same old vault** — it remembers one folder handle in IndexedDB. To point it at a different folder: open the popup, right-click → **Inspect** → **Application** tab → **IndexedDB** → delete the `pickmem` database, then reopen the popup and choose the new folder. (Or just remove and re-load the unpacked extension, which wipes its storage.)
 
 ---
 

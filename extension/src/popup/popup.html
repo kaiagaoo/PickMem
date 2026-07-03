@@ -36,6 +36,27 @@
       <div id="items-list" class="items-list"></div>
     </section>
 
+    <section id="add" class="add hidden">
+      <button id="btn-add-toggle" class="linkbtn">+ Add memory</button>
+      <div id="add-form" class="add-form hidden">
+        <input id="add-label" type="text" placeholder="label (short title)" maxlength="120" />
+        <input
+          id="add-group"
+          type="text"
+          placeholder="group (e.g. about/health)"
+          list="group-options"
+          autocomplete="off"
+        />
+        <datalist id="group-options"></datalist>
+        <input id="add-tags" type="text" placeholder="tags, comma-separated (optional)" />
+        <textarea id="add-body" placeholder="memory text…" rows="3"></textarea>
+        <div class="add-actions">
+          <button id="btn-add-cancel" class="btn">Cancel</button>
+          <button id="btn-add-save" class="btn primary">Add</button>
+        </div>
+      </div>
+    </section>
+
     <section id="save-lens" class="save-lens hidden">
       <input id="lens-name" type="text" placeholder="lens name" maxlength="60" />
       <button id="btn-save-lens" class="btn">Save</button>

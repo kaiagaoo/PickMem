@@ -9,47 +9,35 @@ import (
 )
 
 // ProposeResult reports what propose_memories did without echoing the
-// caller's chat text back into the response. We stage first, summarize
-// second.
+// caller's chat text back into the response.
 type ProposeResult struct {
 	Staged    int      `json:"staged"`
 	Duplicate int      `json:"duplicate_skipped"`
 	Labels    []string `json:"labels"`
 }
 
-// ProposeFromChat splits chat_text into memory candidates and stages
-// each as a `status: pending` note in the inbox with `source: extract`.
-// It never activates — that's the picker's job. Extraction is
-// deterministic and rules-based; AI classification is opt-in in the
-// import path (M4 --allow-ai), not here.
+// ProposeFromChat splits chatText into candidates and stages each as a
+// `status: pending` inbox note with `source: extract`. It never activates
+// anything — that stays the picker's job.
 //
-// Splitting: paragraphs separated by blank lines (ingest.SplitParagraphs),
-// dropping anything under ingest.MinLen chars.
-//
-// De-dupe: normalized content hash over the whole vault's pending notes,
-// so re-running propose_memories on the same conversation is idempotent.
+// Extraction is deterministic and rules-based: paragraphs separated by
+// blank lines, routed with the vault's keyword rules, de-duplicated
+// against the pending inbox on a content hash.
 func ProposeFromChat(s *vault.Store, chatText string) (ProposeResult, error) {
 	cfg, err := s.LoadConfig()
 	if err != nil {
 		return ProposeResult{}, err
 	}
 	router := routing.New(routing.NewRules(cfg))
+	groups := knownGroups(s)
 
-	candidates := ingest.SplitParagraphs(chatText)
-
-	// Existing pending items form the dedupe set.
 	seen := map[string]bool{}
 	for _, n := range s.ListPending() {
 		seen[ingest.ContentHash(n.Body)] = true
 	}
 
-	// Known groups from the current vault — passed to classifiers so an
-	// AI can't invent taxonomy. Rules ignore this; kept for interface
-	// consistency.
-	groups := knownGroups(s)
-
 	result := ProposeResult{Labels: []string{}}
-	for _, body := range candidates {
+	for _, body := range ingest.SplitParagraphs(chatText) {
 		h := ingest.ContentHash(body)
 		if seen[h] {
 			result.Duplicate++
@@ -59,7 +47,6 @@ func ProposeFromChat(s *vault.Store, chatText string) (ProposeResult, error) {
 
 		label := ingest.DeriveLabel(body)
 		group := router.Suggest(context.Background(), body, groups)
-
 		n := &vault.Note{
 			Frontmatter: vault.Frontmatter{
 				Label:          label,
@@ -77,20 +64,18 @@ func ProposeFromChat(s *vault.Store, chatText string) (ProposeResult, error) {
 	return result, nil
 }
 
-// knownGroups returns the sorted, deduped list of groups that currently
-// contain at least one active note.
+// knownGroups returns the sorted list of groups that currently contain at
+// least one active note.
 func knownGroups(s *vault.Store) []string {
 	groups := s.Groups()
 	out := make([]string, 0, len(groups))
 	for g := range groups {
 		out = append(out, g)
 	}
-	// Stable order helps the AI cache prompts if we ever add one here.
 	sortStrings(out)
 	return out
 }
 
-// sortStrings is inline-tiny to avoid a `sort` import just for one call.
 func sortStrings(ss []string) {
 	for i := 1; i < len(ss); i++ {
 		for j := i; j > 0 && ss[j-1] > ss[j]; j-- {

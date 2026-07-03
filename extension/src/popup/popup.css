@@ -190,6 +190,53 @@ body {
   font-size: 11px;
 }
 
+.add {
+  padding: 6px 12px;
+  border-top: 1px solid var(--panel);
+}
+.linkbtn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.linkbtn:hover {
+  color: var(--accent);
+}
+.add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.add-form input,
+.add-form textarea {
+  padding: 5px 8px;
+  border: 1px solid var(--dim);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--fg);
+  font-size: 12px;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+}
+.add-form input:focus,
+.add-form textarea:focus {
+  border-color: var(--accent);
+}
+.add-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.add-actions .btn {
+  flex: 0 0 auto;
+  padding: 4px 12px;
+}
+
 .save-lens {
   display: flex;
   gap: 6px;

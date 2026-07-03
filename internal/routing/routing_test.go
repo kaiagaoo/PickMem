@@ -100,8 +100,8 @@ func TestRouterSwallowsClassifierErrors(t *testing.T) {
 }
 
 func TestRouterIgnoresNilClassifiers(t *testing.T) {
-	// The CLI conditionally appends AIClassifier only when --allow-ai;
-	// nil entries in that list must not blow up.
+	// Callers may conditionally append classifiers; nil entries in the
+	// list must not blow up.
 	r := New(nil, mockClassifier{"a", func(string) (string, error) { return "hit", nil }}, nil)
 	if got := r.Suggest(context.Background(), "x", nil); got != "hit" {
 		t.Errorf("nil-tolerance broken: %q", got)
