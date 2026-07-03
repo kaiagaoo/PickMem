@@ -43,8 +43,19 @@
     "clipboardWrite",
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "contextMenus"
   ],
+
+  "commands": {
+    "capture-selection": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Save the selected text to the PickMem inbox"
+    }
+  },
 
   "host_permissions": [
     "https://chatgpt.com/*",

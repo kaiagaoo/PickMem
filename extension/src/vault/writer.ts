@@ -1,7 +1,8 @@
-// Writes lenses.json and active.json. The extension NEVER writes memory
-// notes — that's the CLI's job, and the create-only invariant lives on
-// the Go side (Store.Update checks content hashes). The extension keeps
-// its write surface narrow so the invariant can't be violated from here.
+// Writes lenses.json and active.json. The extension never REWRITES a
+// memory note — the create-only invariant lives on the Go side
+// (Store.Update checks content hashes). The one place the extension
+// creates notes is capture.ts, and it only ever creates fresh pending
+// files under pickmem/inbox/. This module stays JSON-only.
 
 import type { Active, Lens } from "./types.ts";
 import { ACTIVE_FILE, LENSES_FILE, PICKMEM_DIR } from "./types.ts";
