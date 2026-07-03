@@ -37,6 +37,8 @@ PickMem inverts how assistant "memory" usually works. Instead of the system sile
 
 Both channels read the same vault and produce the same context block, so switching between them doesn't change what the model sees.
 
+Memory also flows the other way: select text on any page and hit the capture shortcut (or right-click → **Save selection to PickMem**) to stage it into your vault's inbox — pending until you accept it in `pickmem review` (§8, §10).
+
 ---
 
 ## 2. Prerequisites
@@ -237,7 +239,19 @@ Then fully quit and reopen the client. The server it launches is `pickmem serve`
 | `get_active_memory` | Returns the same block via a tool call |
 | `list_lenses` | Lists your saved lenses (`name`, item count) |
 | `use_lens(name)` | Activates a lens — rewrites `active.json` and returns the new block |
-| `propose_memories(chat_text)` | Extracts candidate memories from chat text and **stages them to the inbox as pending**. Never activates anything; you still review + accept. Rules-based extraction only. |
+| `list_groups` | Lists your vault's groups (from notes + routing-rule targets) so the model suggests from your real taxonomy |
+| `stage_memories(items)` | **The main save path.** Claude extracts the memory-worthy facts itself — one label + body + `suggested_group` per item — and stages them to the inbox as **pending**. Invalid groups are rejected (staging can never invent taxonomy), duplicates of existing vault content are skipped. Never activates anything; `pickmem review` is still the gate. |
+| `propose_memories(chat_text)` | Fallback bulk-stage for raw text: splits on paragraphs, rules-based only. Prefer `stage_memories`. |
+
+### Let Claude save memories for you
+
+With `stage_memories`, "remembering" stops being manual sentence-picking. Say things like *"remember that"*, *"把这个存进我的记忆"*, or just share something durable — the server's instructions already tell Claude to extract the facts, condense each into a self-contained item, pick a group from your existing taxonomy, and stage everything to the inbox. Your workflow shrinks to:
+
+```bash
+pickmem review    # press A to sweep routed items in, `g` to reassign stragglers
+```
+
+Claude decides *what's worth remembering*; you keep deciding *what gets in*. If you want saving to be even more proactive (e.g. an end-of-conversation sweep without being asked), add a line to your Claude custom instruction — see below.
 
 **Testing it:** run `pickmem pick`, select a few items, confirm. In a new Claude Desktop conversation, ask something that depends on your context. The server reloads the vault on every call, so a fresh pick (or an Obsidian edit) is visible without restarting.
 
@@ -257,11 +271,12 @@ With no selection it's `--- pickmem: no memory selected ---`.
 
 Two client-side settings make this reliable. Neither adds anything beyond what you picked — they just remove friction:
 
-1. **Tool permissions → Always allow.** Settings → Connectors → pickmem → Tool access. Set all four tools to *Always allow* so Claude doesn't stop to confirm each read. (One tool may default to "Ask" on first connect — that's Claude Desktop's own behavior, not a PickMem setting; flip it too.)
+1. **Tool permissions → Always allow.** Settings → Connectors → pickmem → Tool access. Set all six tools to *Always allow* so Claude doesn't stop to confirm each call. (Some may default to "Ask" on first connect — that's Claude Desktop's own behavior, not a PickMem setting; flip them too.) The write-side tools only ever stage to the inbox, so "always allow" never lets Claude activate memory.
 2. **A custom instruction.** Settings → Profile → personal preferences, add something like:
    > *Before answering anything that might depend on my personal context or preferences, check my PickMem active memory first (`get_active_memory` or the `pickmem://active` resource). If it's empty or unrelated, say so rather than guessing.*
+   > *When I share a durable preference, fact, or decision — or when I say "remember this" — extract it and stage it with `stage_memories` (groups from `list_groups`), then tell me what you staged.*
 
-   Without this, Claude often won't check memory unless you tell it to.
+   Without this, Claude often won't check or save memory unless you tell it to each time.
 
 ---
 
@@ -290,9 +305,24 @@ The popup shows your groups and notes as the same **tree with group checkboxes**
 - **Insert** — on ChatGPT / Claude.ai / Gemini, prepends the assembled block into the chat's input box (your existing draft is preserved). The header shows the detected site and whether the input was found.
 - **Copy** — puts the assembled block on your clipboard. Works on **any** site, and even with no vault connected.
 
-The extension writes only `pickmem/active.json` and `pickmem/lenses.json`. It never creates or edits memory notes — that's the CLI's job.
-
 If a site changes its markup and the input can't be found, the popup says so and **Copy** still works.
+
+### Capture: save chat text into your vault
+
+The extension can also send text **into** the vault — as pending inbox items, never straight into active memory.
+
+1. Select text on any page — an assistant's answer, a paragraph of your own prompt, anything.
+2. Either **right-click → Save selection to PickMem**, or press **`Ctrl+Shift+S`** (**`⌘⇧S`** on macOS; check or change the binding at `chrome://extensions/shortcuts`).
+3. A toast confirms the save. The note lands in `pickmem/inbox/` as **pending**, with:
+   - a label derived from the first words of the selection,
+   - the selection as the body, plus a trailing `Source:` line with the page title and URL,
+   - a `suggested_group` if your vault's routing rules (`pickmem/config.json`) match — the toast shows it.
+
+Captured notes go through the same gate as imports: run `pickmem review` (§10) to accept, reassign, or reject them. Nothing you capture is ever injected until you accept it *and* pick it.
+
+Capture works on **any** site, not just the three adapter sites — the right-click/shortcut grants the extension one-time access to that tab. If no vault is connected or the folder permission has lapsed, the toast tells you to open the popup once (which re-requests permission); it never fails silently.
+
+The extension's write surface stays narrow: `pickmem/active.json`, `pickmem/lenses.json`, and **new** files in `pickmem/inbox/`. It never edits or deletes an existing note — that's the CLI's job.
 
 > **Switching vaults / adapters:** the extension remembers one vault folder and there's no in-UI "switch vault" button yet. To point it at a different folder, clear its stored handle — open the popup, right-click → Inspect → Application → IndexedDB → delete the `pickmem` database — then reopen the popup and choose the new folder. Supported injection sites are ChatGPT, Claude.ai, and Gemini; everything else uses Copy.
 
