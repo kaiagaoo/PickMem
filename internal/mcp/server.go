@@ -30,7 +30,9 @@ If the user references something that sounds like it should be in memory but get
 
 Use list_lenses and use_lens if the user mentions a saved lens by name or asks to switch context (e.g. "switch to my Job-Hunt lens").
 
-Use propose_memories only when the user asks you to save or remember something from the conversation. It stages candidates for review — it never activates them, so tell the user to run their review step to finish the save.`
+Saving memory: when the user says to remember something, or shares durable information worth keeping (a preference, a stable fact about their life or work, a decision they made, a correction to something you assumed), extract it and call stage_memories. Condense each fact into one self-contained item — a short label plus a third-person body that makes sense without the conversation around it. Call list_groups first and pick each item's suggested_group from that list; leave it empty if nothing fits. Don't save ephemeral task details, and when it's borderline whether the user would want something kept, ask. Staged items land in the user's inbox as pending — nothing is activated — so afterwards tell the user how many items you staged and that "pickmem review" finishes the save.
+
+Use propose_memories only to dump raw text whose facts you cannot extract yourself (e.g. the user pastes a long export). When you know what the memories are, stage_memories is always the better call.`
 
 // NewServer wires the pickmem MCP server: one resource (pickmem://active)
 // and four tools. The server holds a *vault.Store; each request re-reads
@@ -94,6 +96,12 @@ type useLensArgs struct {
 
 type proposeArgs struct {
 	ChatText string `json:"chat_text" jsonschema:"the conversation or note text to extract candidate memories from"`
+}
+
+type listGroupsArgs struct{}
+
+type stageArgs struct {
+	Items []StageItem `json:"items" jsonschema:"the extracted memory candidates, one self-contained fact each"`
 }
 
 func registerTools(srv *sdkmcp.Server, store *vault.Store) {
@@ -169,8 +177,35 @@ func registerTools(srv *sdkmcp.Server, store *vault.Store) {
 	})
 
 	sdkmcp.AddTool(srv, &sdkmcp.Tool{
+		Name:        "list_groups",
+		Description: "List the groups that exist in the user's vault (the taxonomy). Call this before stage_memories so each item's suggested_group names a real group — staging never creates new groups.",
+	}, func(ctx context.Context, req *sdkmcp.CallToolRequest, _ listGroupsArgs) (*sdkmcp.CallToolResult, any, error) {
+		if err := store.Reload(); err != nil {
+			return nil, nil, err
+		}
+		return jsonResult(KnownGroupNames(store)), nil, nil
+	})
+
+	sdkmcp.AddTool(srv, &sdkmcp.Tool{
+		Name:        "stage_memories",
+		Description: "Stage memory items YOU extracted from the conversation as pending notes in pickmem/inbox/. Each item is one self-contained fact: short label, third-person body, and a suggested_group chosen from list_groups (or empty). Duplicates of existing vault content are skipped. Does NOT activate anything — the user accepts staged items with `pickmem review`, so report what you staged and mention that step.",
+	}, func(ctx context.Context, req *sdkmcp.CallToolRequest, args stageArgs) (*sdkmcp.CallToolResult, any, error) {
+		if len(args.Items) == 0 {
+			return errorResult("no items given — pass the extracted memories in `items`"), nil, nil
+		}
+		if err := store.Reload(); err != nil {
+			return nil, nil, err
+		}
+		result, err := StageMemories(store, args.Items)
+		if err != nil {
+			return nil, nil, err
+		}
+		return jsonResult(result), nil, nil
+	})
+
+	sdkmcp.AddTool(srv, &sdkmcp.Tool{
 		Name:        "propose_memories",
-		Description: "Extract candidate memory items from the given chat text and stage them as pending notes in pickmem/inbox/. Does NOT activate — the user must accept from the picker. Rules-based extraction only in this build; AI classification is opt-in in a future release.",
+		Description: "Fallback bulk-stage: split raw chat text into paragraph-sized candidates and stage them as pending notes in pickmem/inbox/. Extraction is rules-based and crude — prefer stage_memories with facts you extracted yourself whenever possible. Does NOT activate; the user reviews staged items.",
 	}, func(ctx context.Context, req *sdkmcp.CallToolRequest, args proposeArgs) (*sdkmcp.CallToolResult, any, error) {
 		if err := store.Reload(); err != nil {
 			return nil, nil, err

@@ -108,7 +108,7 @@ async function uniquePath(
   return [...dirParts, `${stem}-${suffix}.md`].join("/");
 }
 
-async function pathExists(
+export async function pathExists(
   root: FileSystemDirectoryHandle,
   parts: string[]
 ): Promise<boolean> {
@@ -124,7 +124,7 @@ async function pathExists(
   }
 }
 
-async function writeFileAt(
+export async function writeFileAt(
   root: FileSystemDirectoryHandle,
   relPath: string,
   data: string
