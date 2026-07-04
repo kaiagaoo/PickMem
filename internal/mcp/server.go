@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/kaiagaoo/PickMem/internal/vault"
+	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // ActiveResourceURI is the fixed URI that clients read to fetch the
@@ -30,7 +30,7 @@ If the user references something that sounds like it should be in memory but get
 
 Use list_lenses and use_lens if the user mentions a saved lens by name or asks to switch context (e.g. "switch to my Job-Hunt lens").
 
-Saving memory: when the user says to remember something, or shares durable information worth keeping (a preference, a stable fact about their life or work, a decision they made, a correction to something you assumed), extract it and call stage_memories. Condense each fact into one self-contained item — a short label plus a third-person body that makes sense without the conversation around it. Call list_groups first and pick each item's suggested_group from that list; leave it empty if nothing fits. Don't save ephemeral task details, and when it's borderline whether the user would want something kept, ask. Staged items land in the user's inbox as pending — nothing is activated — so afterwards tell the user how many items you staged and that "pickmem review" finishes the save.
+Saving memory: when the user says to remember something, or shares durable information worth keeping (a preference, a stable fact about their life or work, a decision they made, a correction to something you assumed), extract it and call stage_memories. Condense each item into one self-contained unit — a short label plus a third-person body that makes sense without the conversation around it. Set each item's type: fact for a stable fact (the default), idea for a proposal or concept the user wants to develop, thought for a fleeting reflection, reference for external material like a quote or link. Call list_groups first and pick each item's suggested_group from that list; leave it empty if nothing fits. Don't save ephemeral task details, and when it's borderline whether the user would want something kept, ask. Staged items land in the user's inbox as pending — nothing is activated — so afterwards tell the user how many items you staged and that "pickmem review" finishes the save.
 
 Use propose_memories only to dump raw text whose facts you cannot extract yourself (e.g. the user pastes a long export). When you know what the memories are, stage_memories is always the better call.`
 

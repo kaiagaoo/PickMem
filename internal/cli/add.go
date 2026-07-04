@@ -17,6 +17,7 @@ func newAddCmd() *cobra.Command {
 	var (
 		label    string
 		group    string
+		noteType string
 		tagsCSV  string
 		body     string
 		bodyFile string
@@ -58,6 +59,7 @@ Examples:
 			n := &vault.Note{
 				Frontmatter: vault.Frontmatter{
 					Label: label,
+					Type:  vault.NormalizeType(noteType),
 					Tags:  splitCSV(tagsCSV),
 				},
 				Body: resolved,
@@ -82,6 +84,7 @@ Examples:
 	}
 	cmd.Flags().StringVarP(&label, "label", "l", "", "short title shown in the picker (required)")
 	cmd.Flags().StringVarP(&group, "group", "g", "", "group path, e.g. `financial` or `work/Client-Acme`")
+	cmd.Flags().StringVarP(&noteType, "type", "t", "fact", "kind of note: `fact`, `idea`, `thought`, or `reference`")
 	cmd.Flags().StringVar(&tagsCSV, "tags", "", "comma-separated tag list")
 	cmd.Flags().StringVarP(&body, "body", "b", "", "note body (inline)")
 	cmd.Flags().StringVarP(&bodyFile, "file", "f", "", "read note body from this file (`-` for stdin)")

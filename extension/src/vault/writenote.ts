@@ -49,6 +49,9 @@ export function serializeNote(fm: Frontmatter, body: string): string {
   f.push(`id: ${fm.id}`);
   f.push(`label: ${yamlScalar(fm.label)}`);
   f.push(`group: ${yamlScalar(fm.group)}`);
+  // Omit the default "fact" so plain notes stay byte-clean, matching the
+  // Go serializer.
+  if (fm.type && fm.type !== "fact") f.push(`type: ${fm.type}`);
   if (fm.tags && fm.tags.length) {
     f.push("tags:");
     for (const t of fm.tags) f.push(`  - ${yamlScalar(t)}`);

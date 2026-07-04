@@ -42,6 +42,8 @@ export async function writeInboxNote(
     id,
     label: params.label.trim(),
     group: "",
+    // Captured page text is external material, not a personal fact.
+    type: "reference",
     source: "extract",
     status: "pending",
     created_at: new Date().toISOString(),

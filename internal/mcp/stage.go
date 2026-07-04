@@ -17,7 +17,10 @@ import (
 // it (staged pending, never activated).
 type StageItem struct {
 	Label string `json:"label,omitempty" jsonschema:"short human-readable title; derived from the body if omitted"`
-	Body  string `json:"body" jsonschema:"the memory itself: one self-contained fact, stated in third person"`
+	Body  string `json:"body" jsonschema:"the memory itself: one self-contained item, stated in third person"`
+	// Type is what kind of note this is, independent of its group. Unknown
+	// or empty defaults to fact.
+	Type string `json:"type,omitempty" jsonschema:"kind of note: fact (a stable fact, the default), idea (a proposal/concept), thought (a fleeting reflection), or reference (external material)"`
 	// SuggestedGroup must name a group that already exists in the vault —
 	// staging can't invent taxonomy. Invalid or missing values fall back
 	// to the vault's keyword routing rules, then to unrouted.
@@ -29,6 +32,7 @@ type StagedItem struct {
 	Label string `json:"label"`
 	// Outcome is "staged", "duplicate", or "skipped".
 	Outcome        string `json:"outcome"`
+	Type           string `json:"type,omitempty"`
 	SuggestedGroup string `json:"suggested_group,omitempty"`
 	// Warning explains a downgrade the model should learn from, e.g. a
 	// suggested_group that doesn't exist in the vault.
@@ -100,9 +104,11 @@ func StageMemories(s *vault.Store, items []StageItem) (StageResult, error) {
 			group = router.Suggest(context.Background(), body, KnownGroupNames(s))
 		}
 
+		kind := vault.NormalizeType(item.Type)
 		n := &vault.Note{
 			Frontmatter: vault.Frontmatter{
 				Label:          label,
+				Type:           kind,
 				SuggestedGroup: group,
 				Source:         vault.SourceExtract,
 			},
@@ -113,6 +119,7 @@ func StageMemories(s *vault.Store, items []StageItem) (StageResult, error) {
 		}
 		seen[h] = true
 		out.Outcome = "staged"
+		out.Type = kind
 		out.SuggestedGroup = group
 		result.Staged++
 		result.Items = append(result.Items, out)

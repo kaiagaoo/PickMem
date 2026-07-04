@@ -378,7 +378,7 @@ func (m *ReviewModel) applyFilter() {
 	q := strings.ToLower(strings.TrimSpace(m.query))
 	m.visible = m.visible[:0]
 	for i, n := range m.items {
-		if q == "" || strings.Contains(strings.ToLower(n.Label+" "+n.Body+" "+n.SuggestedGroup), q) {
+		if q == "" || strings.Contains(strings.ToLower(n.Label+" "+n.Kind()+" "+n.Body+" "+n.SuggestedGroup), q) {
 			m.visible = append(m.visible, i)
 		}
 	}

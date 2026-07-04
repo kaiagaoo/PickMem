@@ -40,6 +40,50 @@ func TestNoteRoundTrip(t *testing.T) {
 	}
 }
 
+func TestNoteTypeRoundTripAndFactOmission(t *testing.T) {
+	base := Frontmatter{
+		ID:        "01JAX5D9KX3M8VYZ8T5EK5JY7C",
+		Label:     "sailing idea",
+		Group:     "hobbies",
+		Source:    SourceManual,
+		Status:    StatusActive,
+		CreatedAt: time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
+	}
+
+	// A non-default kind round-trips and appears on disk.
+	idea := &Note{Frontmatter: base, Body: "try a solo overnight sail"}
+	idea.Type = TypeIdea
+	data, err := idea.Serialize()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "type: idea") {
+		t.Errorf("idea type not serialized:\n%s", data)
+	}
+	got, err := ParseNote(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Kind() != TypeIdea {
+		t.Errorf("kind = %q, want idea", got.Kind())
+	}
+
+	// The default kind is omitted on disk but still reads back as fact.
+	fact := &Note{Frontmatter: base, Body: "keeps a sailboat"}
+	fact.Type = TypeFact
+	data, err = fact.Serialize()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), "type:") {
+		t.Errorf("fact type should be omitted on disk:\n%s", data)
+	}
+	got, _ = ParseNote(data)
+	if got.Kind() != TypeFact {
+		t.Errorf("kind = %q, want fact (default)", got.Kind())
+	}
+}
+
 func TestParseNoteRejectsMissingRequiredFields(t *testing.T) {
 	cases := []struct {
 		name string

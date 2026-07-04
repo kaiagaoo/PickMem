@@ -6,11 +6,14 @@
 
 export type NoteSource = "manual" | "import" | "extract";
 export type NoteStatus = "active" | "pending";
+export type NoteType = "fact" | "idea" | "thought" | "reference";
 
 export interface Frontmatter {
   id: string;
   label: string;
   group: string;
+  /** Kind of note, independent of group. Omitted on disk when "fact". */
+  type?: NoteType;
   tags?: string[];
   source: NoteSource;
   status: NoteStatus;

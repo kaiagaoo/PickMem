@@ -155,6 +155,8 @@ Body source precedence: `--body`, then `--file` (`-` means stdin), then piped st
 
 Groups nest with `/` (e.g. `work/projects`). `pickmem add` generates the note's stable id for you — this is why you normally add through the CLI rather than hand-creating files (see §12).
 
+**Note types.** A note isn't only "a fact about me." Pass `--type` to say what kind it is — `fact` (default), `idea`, `thought`, or `reference` — so you can later pick "my *ideas* about this project" separately from stable facts. The type is independent of the group (where it lives): `pickmem add -l "solo sail" -g projects -t idea -b "try a solo overnight sail"`. The default `fact` is left off disk, so plain memories stay clean; `pickmem list --type idea` filters by kind, and typing a kind name in the picker's filter narrows to it.
+
 **Stage to the inbox instead of adding directly** with `--inbox`; the `--group` you pass becomes a *suggested* group the note carries until you accept it in review (§10):
 
 ```bash
@@ -431,9 +433,9 @@ The vault path for every command except `init` resolves as `--vault` → `$PICKM
 ```
 pickmem init <path> [--bare] [--force]         # create a vault; applies the starter taxonomy unless --bare
 
-pickmem add --label "…" [--group …] [--tags a,b]
+pickmem add --label "…" [--group …] [--type fact|idea|thought|reference] [--tags a,b]
             [--body "…" | --file <path|-> | (stdin) | ($EDITOR)] [--inbox]
-pickmem list [--group <prefix>] [--pending] [--all]     # alias: ls
+pickmem list [--group <prefix>] [--type <kind>] [--pending] [--all]     # alias: ls
 pickmem show <id-or-suffix> [--raw]
 pickmem edit <id-or-suffix>                    # opens $EDITOR
 pickmem rm <id-or-suffix> --yes

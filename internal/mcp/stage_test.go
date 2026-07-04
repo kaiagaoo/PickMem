@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/kaiagaoo/PickMem/internal/vault"
+	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func callStage(t *testing.T, cs *sdkmcp.ClientSession, items []map[string]any) StageResult {
@@ -102,6 +102,32 @@ func TestStageMemoriesStagesPendingOnly(t *testing.T) {
 	}
 	if len(a.ItemIDs) != 0 {
 		t.Errorf("stage_memories activated something: %+v", a)
+	}
+}
+
+func TestStageMemoriesCarriesType(t *testing.T) {
+	s, cs, _ := newFixture(t)
+	sr := callStage(t, cs, []map[string]any{
+		{"label": "sail solo", "body": "wants to try a solo overnight sail", "type": "idea"},
+		{"label": "penicillin", "body": "allergic to penicillin"},   // no type → fact
+		{"label": "weird", "body": "some note", "type": "nonsense"}, // unknown → fact
+	})
+	if sr.Staged != 3 {
+		t.Fatalf("result = %+v, want 3 staged", sr)
+	}
+	if sr.Items[0].Type != vault.TypeIdea {
+		t.Errorf("item 0 type = %q, want idea", sr.Items[0].Type)
+	}
+	if sr.Items[1].Type != vault.TypeFact || sr.Items[2].Type != vault.TypeFact {
+		t.Errorf("missing/unknown type should default to fact: %+v", sr.Items)
+	}
+	// And it's persisted on the note.
+	byLabel := map[string]*vault.Note{}
+	for _, n := range s.ListPending() {
+		byLabel[n.Label] = n
+	}
+	if byLabel["sail solo"].Kind() != vault.TypeIdea {
+		t.Errorf("idea kind not persisted: %+v", byLabel["sail solo"])
 	}
 }
 
