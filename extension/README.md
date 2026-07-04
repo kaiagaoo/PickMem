@@ -35,6 +35,7 @@ Click the toolbar icon. On first open you'll see **Choose vault folder…** — 
 - **Activate a lens** — click a lens chip. Selection is replaced with the lens's items.
 - **Save a lens** — type a name in the bottom field and click **Save**. Writes to `pickmem/lenses.json`.
 - **Add a memory** — click **+ Add memory**, fill in label / group / tags / text, and save. Writes a new active note into the group folder (same as `pickmem add`). Create-only: the extension never rewrites an existing note.
+- **Capture selection** — select text on **any** page, then right-click → **Save selection to PickMem** (or press `Ctrl+Shift+S` / `⌘⇧S`). Stages the selection as a **pending** note in `pickmem/inbox/`, with the page title/URL as a source line and a `suggested_group` from your vault's routing rules. Accept it later in `pickmem review` — capture feeds the inbox, never the model.
 - **Copy** — assembles the block and writes to clipboard. Also persists the selection to `pickmem/active.json`.
 - **Insert** — same as Copy, plus messages the active tab to prepend the block into the chat's input box (existing draft text is preserved below).
 
