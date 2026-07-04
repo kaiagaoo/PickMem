@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/qwgao/pickmem/internal/vault"
+	"github.com/kaiagaoo/PickMem/internal/vault"
 )
 
 func TestRulesFirstMatchWins(t *testing.T) {

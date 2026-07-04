@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/qwgao/pickmem/internal/vault"
+	"github.com/kaiagaoo/PickMem/internal/vault"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )

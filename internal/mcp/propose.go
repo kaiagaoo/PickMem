@@ -3,9 +3,9 @@ package mcp
 import (
 	"context"
 
-	"github.com/qwgao/pickmem/internal/ingest"
-	"github.com/qwgao/pickmem/internal/routing"
-	"github.com/qwgao/pickmem/internal/vault"
+	"github.com/kaiagaoo/PickMem/internal/ingest"
+	"github.com/kaiagaoo/PickMem/internal/routing"
+	"github.com/kaiagaoo/PickMem/internal/vault"
 )
 
 // ProposeResult reports what propose_memories did without echoing the

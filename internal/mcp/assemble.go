@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/qwgao/pickmem/internal/vault"
+	"github.com/kaiagaoo/PickMem/internal/vault"
 )
 
 // AssembleActive builds the context block the model sees: the bodies of

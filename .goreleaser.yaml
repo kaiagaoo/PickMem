@@ -20,7 +20,7 @@ builds:
     # Reproducible builds: pin the binary's timestamp to the commit's.
     mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
-      - -s -w -X github.com/qwgao/pickmem/internal/cli.Version={{.Version}}
+      - -s -w -X github.com/kaiagaoo/PickMem/internal/cli.Version={{.Version}}
     goos:
       - darwin
       - linux

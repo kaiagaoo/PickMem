@@ -1,4 +1,4 @@
-module github.com/qwgao/pickmem
+module github.com/kaiagaoo/PickMem
 
 go 1.26.4
 

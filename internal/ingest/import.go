@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/qwgao/pickmem/internal/routing"
-	"github.com/qwgao/pickmem/internal/vault"
+	"github.com/kaiagaoo/PickMem/internal/routing"
+	"github.com/kaiagaoo/PickMem/internal/vault"
 )
 
 // ImportResult is what a caller learns about an import run without having

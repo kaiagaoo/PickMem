@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/qwgao/pickmem/internal/install"
+	"github.com/kaiagaoo/PickMem/internal/install"
 	"github.com/spf13/cobra"
 )
 

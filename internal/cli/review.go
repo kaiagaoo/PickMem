@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/qwgao/pickmem/internal/picker"
-	"github.com/qwgao/pickmem/internal/vault"
+	"github.com/kaiagaoo/PickMem/internal/picker"
+	"github.com/kaiagaoo/PickMem/internal/vault"
 	"github.com/spf13/cobra"
 )
 

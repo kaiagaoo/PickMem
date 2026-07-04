@@ -11,7 +11,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/qwgao/pickmem/internal/vault"
+	"github.com/kaiagaoo/PickMem/internal/vault"
 )
 
 // Classifier proposes a group for a memory body. Implementations receive

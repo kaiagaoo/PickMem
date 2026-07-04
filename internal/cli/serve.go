@@ -4,8 +4,8 @@ import (
 	"context"
 
 	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
-	pmmcp "github.com/qwgao/pickmem/internal/mcp"
-	"github.com/qwgao/pickmem/internal/vault"
+	pmmcp "github.com/kaiagaoo/PickMem/internal/mcp"
+	"github.com/kaiagaoo/PickMem/internal/vault"
 	"github.com/spf13/cobra"
 )
 

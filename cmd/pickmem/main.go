@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/qwgao/pickmem/internal/cli"
+	"github.com/kaiagaoo/PickMem/internal/cli"
 )
 
 func main() {

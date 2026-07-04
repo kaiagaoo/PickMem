@@ -3,8 +3,8 @@ package cli
 import (
 	"fmt"
 
-	"github.com/qwgao/pickmem/internal/ingest"
-	"github.com/qwgao/pickmem/internal/vault"
+	"github.com/kaiagaoo/PickMem/internal/ingest"
+	"github.com/kaiagaoo/PickMem/internal/vault"
 	"github.com/spf13/cobra"
 )
 

@@ -3,7 +3,7 @@ package picker
 import (
 	"strings"
 
-	"github.com/qwgao/pickmem/internal/vault"
+	"github.com/kaiagaoo/PickMem/internal/vault"
 )
 
 // rowKind distinguishes the two things that appear in the scrollable list:

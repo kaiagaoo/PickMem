@@ -3,7 +3,7 @@ package picker
 import (
 	"testing"
 
-	"github.com/qwgao/pickmem/internal/vault"
+	"github.com/kaiagaoo/PickMem/internal/vault"
 )
 
 func nestedFixtureNotes() []*vault.Note {

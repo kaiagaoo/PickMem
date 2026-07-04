@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/qwgao/pickmem/internal/vault"
-	"github.com/qwgao/pickmem/templates"
+	"github.com/kaiagaoo/PickMem/internal/vault"
+	"github.com/kaiagaoo/PickMem/templates"
 	"github.com/spf13/cobra"
 )
 

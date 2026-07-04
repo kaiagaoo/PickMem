@@ -3,7 +3,7 @@ package mcp
 import (
 	"testing"
 
-	"github.com/qwgao/pickmem/internal/vault"
+	"github.com/kaiagaoo/PickMem/internal/vault"
 )
 
 // These lock the exact byte format — mirror
