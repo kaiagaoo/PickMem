@@ -24,6 +24,7 @@ PickMem keeps your memory in a plain folder of Markdown files (an Obsidian vault
     - [Build and load](#build-and-load)
     - [Connect your vault](#connect-your-vault)
     - [Pick and deliver](#pick-and-deliver)
+    - [Add a memory from the popup](#add-a-memory-from-the-popup)
   - [9. Import a batch of memories](#9-import-a-batch-of-memories)
     - [Undoing an import](#undoing-an-import)
   - [10. Review the inbox](#10-review-the-inbox)
@@ -36,7 +37,7 @@ PickMem keeps your memory in a plain folder of Markdown files (an Obsidian vault
 
 ## 1. What is PickMem?
 
-PickMem inverts how assistant "memory" usually works. Instead of the system silently deciding what past context to inject, **the default is nothing, and you add context on purpose.**
+PickMem inverts how assistant "memory" usually works. Instead of the system silently deciding what past context to inject, **the default is nothing, and you add context on purpose.** Think of it as a replacement for built-in auto-memory: switch the assistant's own memory off, and the model is personalized only by the items you deliberately pick for that session — never by stored context behind scenes.
 
 - Your memories live in a folder of Markdown notes. Each note is one memory item.
 - You run a picker, select the items relevant to your current task, and confirm. That selection is written to a small file (`pickmem/active.json`).
@@ -65,7 +66,7 @@ You do **not** need Docker, an account, an API key, or a network connection — 
 Clone and build:
 
 ```bash
-git clone https://github.com/qwgao/pickmem   # substitute the actual URL
+git clone https://github.com/kaiagaoo/PickMem.git   
 cd pickmem
 go build -o pickmem ./cmd/pickmem
 ```

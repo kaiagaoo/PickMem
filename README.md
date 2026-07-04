@@ -6,11 +6,11 @@
 ![Go](https://img.shields.io/badge/Go-1.26+-00ADD8.svg)
 ![Local-first](https://img.shields.io/badge/local--first-no%20telemetry-2E3440.svg)
 
-Every major assistant now has "memory," and it usually makes answers *worse* — importing details irrelevant to the question and nudging the model toward agreeing with you. The root problem is *who holds the controls*: the system decides what's relevant and injects it silently.
+Every major assistant now has "memory," and it sometimes makes answers *worse* — importing details irrelevant to the question and nudging the model toward agreeing with you or taking advantage of those private personal information without your notice. The root problem is *who holds the controls*: the system decides what's relevant and injects it silently.
 
 PickMem inverts that. Your memory lives in a plain folder of Markdown notes on your own disk. **The default is nothing** — for each task you open a picker, select the items that matter, and only that slice reaches the model.
 
-Nowhere does this matter more than when you ask for advice. With auto-memory on, an assistant can quietly factor in whatever it has stored about you — your budget, your past purchases, details you never meant to raise — and you have no way to see what tilted the answer. PickMem is the alternative that lets you turn auto-memory off without going context-blind: the model weighs only the facts you deliberately chose. You decide what's in scope, so you can trust a recommendation on a basis you can actually see.
+Nowhere does this matter more than when you ask for advice. With auto-memory on, an assistant can quietly factor in whatever it has stored about you — your budget, your past purchases, details you never meant to raise — and you have no way to see what tilted the answer. PickMem is the alternative that lets you turn auto-memory off without going context-blind: the model weighs only the facts you deliberately chose. You decide what's in scope, so you can trust a reponse on a basis you can actually see.
 
 ---
 
@@ -181,4 +181,4 @@ Full walkthrough — install to daily use, every command and flag — in **[USER
 
 ## License
 
-[MIT](LICENSE) © 2026 Qianwen Gao
+[MIT](LICENSE) © 2026 Kaia Gao
