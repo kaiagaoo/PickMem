@@ -120,28 +120,9 @@ func StageMemories(s *vault.Store, items []StageItem) (StageResult, error) {
 	return result, nil
 }
 
-// KnownGroupNames is the taxonomy a classifier (AI or model-side) may
-// suggest from: groups holding at least one active note, plus every group
-// the routing rules target. The rule targets matter on a fresh vault —
-// the starter taxonomy exists as rules + folders before any note does.
+// KnownGroupNames is the taxonomy a classifier (the model, via
+// list_groups) may suggest from. It's the user's curated folder tree
+// unioned with note groups and rule targets — see vault.Store.KnownGroups.
 func KnownGroupNames(s *vault.Store) []string {
-	set := map[string]bool{}
-	for g := range s.Groups() {
-		if g != "" {
-			set[g] = true
-		}
-	}
-	if cfg, err := s.LoadConfig(); err == nil {
-		for _, r := range cfg.RoutingRules {
-			if r.Group != "" {
-				set[r.Group] = true
-			}
-		}
-	}
-	out := make([]string, 0, len(set))
-	for g := range set {
-		out = append(out, g)
-	}
-	sortStrings(out)
-	return out
+	return s.KnownGroups()
 }

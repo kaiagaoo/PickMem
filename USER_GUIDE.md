@@ -247,7 +247,7 @@ Then fully quit and reopen the client. The server it launches is `pickmem serve`
 | `get_active_memory` | Returns the same block via a tool call |
 | `list_lenses` | Lists your saved lenses (`name`, item count) |
 | `use_lens(name)` | Activates a lens — rewrites `active.json` and returns the new block |
-| `list_groups` | Lists your vault's groups (from notes + routing-rule targets) so the model suggests from your real taxonomy |
+| `list_groups` | Lists your vault's groups — **your folder tree** (plus note groups + routing-rule targets) — so the model classifies into your real, self-defined taxonomy. Folders prefixed with `_` are private and never sent. |
 | `stage_memories(items)` | **The main save path.** Claude extracts the memory-worthy facts itself — one label + body + `suggested_group` per item — and stages them to the inbox as **pending**. Invalid groups are rejected (staging can't invent taxonomy), duplicates of existing vault content are skipped. Never activates; `pickmem review` is still the gate. |
 | `propose_memories(chat_text)` | Fallback bulk-stage for raw text: splits on paragraphs, rules-based only. Prefer `stage_memories`. |
 
@@ -415,6 +415,10 @@ Every memory note is a normal Markdown file with a YAML frontmatter block. Open 
 - A note with a **frontmatter block missing its `id`** will cause vault loads to error until you fix or delete it. So: create memory items with `pickmem add`, not by typing a half-frontmatter file in Obsidian.
 
 **Regrouping** is just changing a note's `group:` field — the frontmatter `group` is what PickMem reads, not the folder the file sits in. You can move files around in Obsidian too; keep the `group:` field in sync if you want the picker's tree to match.
+
+**Your taxonomy is your folder tree.** You aren't limited to the starter groups — **make a folder in Obsidian and it becomes a category.** Every directory under the vault (except `pickmem/`) is a group PickMem knows about: it's what `list_groups` reports to Claude for classification, and what the review overlay suggests when you reassign. Create `work/client-acme/` or `hobbies/sailing/` and Claude can file new memories straight into them — even before any note lives there.
+
+**Keeping a category private.** Because folder names go to the model via `list_groups`, prefix a folder with `_` to keep it *out* of the shared list: `_medical/`, `_finance/`. You can still file notes there by hand in Obsidian, but the name never leaves your disk and Claude never sees it. (Dot-folders like `.obsidian` are excluded too.)
 
 **Don't hand-edit** files under `pickmem/` (`config.json`, `lenses.json`, `active.json`, `inbox/`) — let the tools manage those.
 

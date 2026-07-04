@@ -63,11 +63,3 @@ func ProposeFromChat(s *vault.Store, chatText string) (ProposeResult, error) {
 	}
 	return result, nil
 }
-
-func sortStrings(ss []string) {
-	for i := 1; i < len(ss); i++ {
-		for j := i; j > 0 && ss[j-1] > ss[j]; j-- {
-			ss[j-1], ss[j] = ss[j], ss[j-1]
-		}
-	}
-}

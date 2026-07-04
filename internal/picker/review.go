@@ -368,13 +368,10 @@ func (m ReviewModel) finalDecisions() []ReviewDecision {
 }
 
 func (m ReviewModel) knownGroups() []string {
-	groups := m.store.Groups()
-	out := make([]string, 0, len(groups))
-	for g := range groups {
-		out = append(out, g)
-	}
-	sort.Strings(out)
-	return out
+	// The full curated taxonomy (folder tree + note groups + rule targets),
+	// so the reassign overlay suggests every folder the user made in
+	// Obsidian, not only groups that already hold a note.
+	return m.store.KnownGroups()
 }
 
 func (m *ReviewModel) applyFilter() {
