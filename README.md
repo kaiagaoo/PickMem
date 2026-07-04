@@ -58,16 +58,15 @@ PickMem is the alternative that lets you turn auto-memory off *without going con
 
 ---
 
-## ✨ Features
+## ✨ Why it's different
 
-- **📂 Your vault is the store.** Notes are Markdown + YAML frontmatter — readable, editable, Obsidian-compatible. No database, no lock-in.
-- **🎯 You curate; the system doesn't guess.** Selection is deliberate and per-session. Nothing is auto-injected, ever.
-- **🧠 Let Claude do the saving.** Ask it to remember something and it extracts the fact, classifies it into *your* taxonomy, and stages it for review — you approve with one keystroke. Memory that fills itself, without the black box.
-- **🗂️ Your folders are your taxonomy.** Make a folder in Obsidian and it becomes a category. Prefix it with `_` to keep it private — that name never reaches the model.
-- **✂️ Capture from anywhere.** Select text on any page and right-click (or hit a shortcut) to stash it straight into your inbox for review.
-- **🔌 Two delivery channels, one vault** — an **MCP server** (Claude Desktop, Cursor, Cline) and a **Chrome extension** (ChatGPT, Claude.ai, Gemini + clipboard fallback anywhere).
-- **🔭 Lenses.** Save a selection you reuse — `Job-Hunt`, `Doctor-Visit`, `Client-Acme` — and recall it in one click.
-- **🔒 Local-first and private.** No account, no telemetry, no network calls. Everything runs on your machine.
+Three things set PickMem apart — everything else is in service of these:
+
+- **🎯 You decide what the model sees.** The default is nothing; you pick the slice, per task. No system guessing, no silent injection — the one axis no auto-memory product gives you.
+- **📂 Your memory is plain Markdown you own.** A folder of notes on your disk, Obsidian-native. No database, no account, no lock-in — readable and portable ten years from now.
+- **🔌 One vault, any model.** The same memory reaches Claude, ChatGPT, Gemini, Cursor, and Cline. Switch assistants without leaving your memory behind — something no built-in memory can do.
+
+<sub>Built on top: **Claude can save memories for you** (it extracts and stages; you approve), **capture** any page selection, **lenses** for recurring picks, **note types** (fact / idea / thought / reference), and a **folder-defined taxonomy** with `_private` folders. All local, all reviewed by you.</sub>
 
 ---
 
