@@ -15,6 +15,10 @@ builds:
     binary: pickmem
     env:
       - CGO_ENABLED=0
+    flags:
+      - -trimpath   # strip local build paths -> reproducible, no path leakage
+    # Reproducible builds: pin the binary's timestamp to the commit's.
+    mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - -s -w -X github.com/qwgao/pickmem/internal/cli.Version={{.Version}}
     goos:
@@ -24,6 +28,9 @@ builds:
     goarch:
       - amd64
       - arm64
+
+# Print the size of each built binary in the CI logs.
+report_sizes: true
 
 archives:
   - id: pickmem
@@ -46,6 +53,15 @@ snapshot:
 
 changelog:
   sort: asc
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: Bug fixes
+      regexp: '^.*?fix(\(.+\))??!?:.+$'
+      order: 1
+    - title: Others
+      order: 999
   filters:
     exclude:
       - "^docs:"
