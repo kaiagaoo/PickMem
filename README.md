@@ -78,7 +78,7 @@ Both channels read the same `active.json` and produce the same context block, so
 ## Install
 
 **Prebuilt binary (recommended — no Go needed).** Grab the archive for your OS/arch
-from the [latest release](https://github.com/qwgao/pickmem/releases/latest), unpack
+from the [latest release](https://github.com/kaiagao/pickmem/releases/latest), unpack
 it, and put `pickmem` on your `PATH`. On macOS/Linux:
 
 ```bash
