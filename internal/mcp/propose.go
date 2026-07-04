@@ -29,7 +29,7 @@ func ProposeFromChat(s *vault.Store, chatText string) (ProposeResult, error) {
 		return ProposeResult{}, err
 	}
 	router := routing.New(routing.NewRules(cfg))
-	groups := knownGroups(s)
+	groups := KnownGroupNames(s)
 
 	seen := map[string]bool{}
 	for _, n := range s.ListPending() {
@@ -62,18 +62,6 @@ func ProposeFromChat(s *vault.Store, chatText string) (ProposeResult, error) {
 		result.Labels = append(result.Labels, label)
 	}
 	return result, nil
-}
-
-// knownGroups returns the sorted list of groups that currently contain at
-// least one active note.
-func knownGroups(s *vault.Store) []string {
-	groups := s.Groups()
-	out := make([]string, 0, len(groups))
-	for g := range groups {
-		out = append(out, g)
-	}
-	sortStrings(out)
-	return out
 }
 
 func sortStrings(ss []string) {

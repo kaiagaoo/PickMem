@@ -247,7 +247,11 @@ Then fully quit and reopen the client. The server it launches is `pickmem serve`
 | `get_active_memory` | Returns the same block via a tool call |
 | `list_lenses` | Lists your saved lenses (`name`, item count) |
 | `use_lens(name)` | Activates a lens — rewrites `active.json` and returns the new block |
-| `propose_memories(chat_text)` | Extracts candidate memories from chat text and **stages them to the inbox as pending**. Never activates anything; you still review + accept. Rules-based extraction. |
+| `list_groups` | Lists your vault's groups (from notes + routing-rule targets) so the model suggests from your real taxonomy |
+| `stage_memories(items)` | **The main save path.** Claude extracts the memory-worthy facts itself — one label + body + `suggested_group` per item — and stages them to the inbox as **pending**. Invalid groups are rejected (staging can't invent taxonomy), duplicates of existing vault content are skipped. Never activates; `pickmem review` is still the gate. |
+| `propose_memories(chat_text)` | Fallback bulk-stage for raw text: splits on paragraphs, rules-based only. Prefer `stage_memories`. |
+
+With `stage_memories`, saving stops being manual sentence-picking: say *"remember that"* or just share something durable, and (steered by the server's instructions) Claude extracts each fact, picks a group from your existing taxonomy, and stages everything to the inbox. Your part shrinks to `pickmem review` — press `A` to sweep routed items in.
 
 **Testing it:** run `pickmem pick`, select a few items, confirm. In a new Claude Desktop conversation, ask something that depends on your context. The server reloads the vault on every call, so a fresh pick (or an Obsidian edit) is visible without restarting.
 
