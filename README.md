@@ -77,7 +77,20 @@ Both channels read the same `active.json` and produce the same context block, so
 
 ## Install
 
-Requires **Go 1.26+**. (Node 20+ and Chrome only if you want the browser extension.)
+**Prebuilt binary (recommended — no Go needed).** Grab the archive for your OS/arch
+from the [latest release](https://github.com/qwgao/pickmem/releases/latest), unpack
+it, and put `pickmem` on your `PATH`. On macOS/Linux:
+
+```bash
+# pick the asset matching your platform: darwin/linux, arm64/amd64
+curl -sSL https://github.com/qwgao/pickmem/releases/latest/download/pickmem_darwin_arm64.tar.gz | tar xz
+sudo mv pickmem /usr/local/bin/
+pickmem --version
+```
+
+(Windows: download the `_windows_amd64.zip` asset and unzip.)
+
+**From source** (needs **Go 1.26+**):
 
 ```bash
 git clone https://github.com/qwgao/pickmem
@@ -85,6 +98,8 @@ cd pickmem
 go build -o pickmem ./cmd/pickmem
 go install ./cmd/pickmem      # or: cp pickmem /usr/local/bin/
 ```
+
+> The browser extension is separate and needs Node 20+ / Chrome — see below.
 
 ---
 

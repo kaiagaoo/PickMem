@@ -8,6 +8,9 @@
 /pickmem
 /*.test
 
+# GoReleaser build output
+/dist/
+
 # Extension build artifacts (source is committed; dist/ and node_modules/ are not)
 extension/node_modules/
 extension/dist/

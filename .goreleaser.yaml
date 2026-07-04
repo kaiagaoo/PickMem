@@ -1,0 +1,57 @@
+# GoReleaser config — builds prebuilt binaries and attaches them to a
+# GitHub Release on every pushed tag (see .github/workflows/release.yml).
+# Docs: https://goreleaser.com
+version: 2
+
+project_name: pickmem
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: pickmem
+    main: ./cmd/pickmem
+    binary: pickmem
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X github.com/qwgao/pickmem/internal/cli.Version={{.Version}}
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: pickmem
+    # e.g. pickmem_0.1.0_darwin_arm64.tar.gz  (Windows -> .zip)
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - USER_GUIDE.md
+      - LICENSE
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  draft: false
+  prerelease: auto
