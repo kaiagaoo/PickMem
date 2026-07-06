@@ -90,16 +90,15 @@ Both channels read the same `active.json` and produce the same context block, so
 
 ## 🚀 Install
 
-**Prebuilt binary (recommended — no Go needed).** Grab the archive for your OS/arch from the [latest release](https://github.com/kaiagaoo/PickMem/releases/latest), unpack it, and put `pickmem` on your `PATH`:
+**One-liner (macOS / Linux):**
 
 ```bash
-# pick the asset matching your platform: darwin/linux, arm64/amd64
-curl -sSL https://github.com/kaiagaoo/PickMem/releases/latest/download/pickmem_darwin_arm64.tar.gz | tar xz
-sudo mv pickmem /usr/local/bin/
-pickmem --version
+curl -fsSL https://raw.githubusercontent.com/kaiagaoo/PickMem/main/install.sh | sh
 ```
 
-<sub>Windows: download the `_windows_amd64.zip` asset and unzip.</sub>
+Detects your OS/arch, downloads the right binary from the [latest release](https://github.com/kaiagaoo/PickMem/releases/latest), verifies its checksum, and installs to `/usr/local/bin` (or `~/.local/bin` without sudo). Pin a version with `PICKMEM_VERSION=v0.1.1`, change the target with `PICKMEM_INSTALL_DIR=…`.
+
+<sub>Windows: download the `_windows_amd64.zip` asset from the [releases page](https://github.com/kaiagaoo/PickMem/releases/latest) and unzip.</sub>
 
 **From source** (needs **Go 1.26+**):
 

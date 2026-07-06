@@ -12,7 +12,7 @@ PickMem keeps your memory in a plain folder of Markdown files (an Obsidian vault
   - [Table of contents](#table-of-contents)
   - [1. What is PickMem?](#1-what-is-pickmem)
   - [2. Prerequisites](#2-prerequisites)
-  - [3. Build and install the CLI](#3-build-and-install-the-cli)
+  - [3. Install the CLI](#3-install-the-cli)
   - [4. Create your first vault](#4-create-your-first-vault)
   - [5. Add memories](#5-add-memories)
     - [Inspecting](#inspecting)
@@ -61,13 +61,21 @@ You do **not** need Docker, an account, an API key, or a network connection — 
 
 ---
 
-## 3. Build and install the CLI
+## 3. Install the CLI
 
-Clone and build:
+**Easiest — the install script** (macOS/Linux; no Go needed). Downloads the right prebuilt binary from the latest release, verifies its checksum, and installs it:
 
 ```bash
-git clone https://github.com/kaiagaoo/PickMem.git   
-cd pickmem
+curl -fsSL https://raw.githubusercontent.com/kaiagaoo/PickMem/main/install.sh | sh
+```
+
+It installs to `/usr/local/bin` if writable, else `~/.local/bin`. Env overrides: `PICKMEM_VERSION=v0.1.1` to pin, `PICKMEM_INSTALL_DIR=…` for a custom target. Windows: grab the `.zip` from the [releases page](https://github.com/kaiagaoo/PickMem/releases/latest).
+
+**Or build from source** (needs Go 1.26+):
+
+```bash
+git clone https://github.com/kaiagaoo/PickMem.git
+cd PickMem
 go build -o pickmem ./cmd/pickmem
 ```
 
