@@ -3,9 +3,8 @@ package cli
 import (
 	"context"
 
-	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 	pmmcp "github.com/kaiagaoo/PickMem/internal/mcp"
-	"github.com/kaiagaoo/PickMem/internal/vault"
+	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 )
 
@@ -24,11 +23,10 @@ Exposes:
 
 Use ` + "`pickmem install <client>`" + ` to wire this into a client's config.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			root, err := vaultFlag(cmd)
-			if err != nil {
-				return err
-			}
-			s, err := vault.Open(root)
+			// openVault prints load warnings to stderr, which stdio MCP
+			// clients capture in their server logs — stdout stays clean
+			// for JSON-RPC.
+			s, err := openVault(cmd)
 			if err != nil {
 				return err
 			}

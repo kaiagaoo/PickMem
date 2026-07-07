@@ -92,7 +92,7 @@ Verify:
 pickmem --help
 ```
 
-You should see these subcommands: `init`, `add`, `list`, `show`, `edit`, `rm`, `pick`, `serve`, `install`, `uninstall`, `import`, `review`.
+You should see these subcommands: `init`, `add`, `list`, `show`, `edit`, `rm`, `pick`, `status`, `context`, `lens`, `inbox`, `serve`, `install`, `uninstall`, `import`, `review`.
 
 > **macOS note:** if you rebuild often and the binary ever hangs on launch with no output, macOS Gatekeeper may have flagged it. Rebuild it yourself directly (`go build -o /usr/local/bin/pickmem ./cmd/pickmem`) rather than through another tool, and confirm with `spctl -a -vv /usr/local/bin/pickmem`.
 
@@ -107,6 +107,15 @@ pickmem init ~/PickMemVault
 ```
 
 By default `init` lays down a **starter taxonomy**: a tree of group folders, a `pickmem/config.json` seeded with keyword→group routing rules, and a `README.md` at the vault root describing every group. (PickMem ignores that README — it has no frontmatter — so it's just a map for you.)
+
+It also seeds **one fill-in-the-blank note per group** (tagged `starter`), so the vault starts as a form to complete instead of an empty tree:
+
+```
+Monthly income: ____
+Other sources: ____
+```
+
+Open them in Obsidian or with `pickmem edit <id>` and replace the `____` blanks; delete the ones you don't care about with `pickmem rm <id> --yes`. Unfilled blanks are harmless — you just won't pick those notes. Re-running `init --force` restores missing skeletons but **never duplicates or overwrites a note you've been filling in** (it skips any group+label that already exists).
 
 The starter groups nest by life area:
 
@@ -232,6 +241,16 @@ The footer shows `Active: <lens|custom|none> · N selected · ~T tokens` (a roug
 
 Only **active** notes appear in the picker. Pending inbox items must be accepted in `pickmem review` (§10) first.
 
+**Checking what's active without opening the picker:**
+
+```bash
+pickmem status           # vault, note counts, current selection, ~tokens
+pickmem context          # print the exact block the model receives
+pickmem context --copy   # …or copy it, to paste into any chat UI
+```
+
+`pickmem context --copy` is a delivery channel of its own: it assembles the same block the MCP server and extension produce, so you can paste your picked memory into any site — no extension needed.
+
 ---
 
 ## 7. Use PickMem with Claude Desktop (MCP)
@@ -305,6 +324,8 @@ In Chrome: open `chrome://extensions`, enable **Developer mode**, click **Load u
 
 Click the PickMem toolbar icon. First run shows **"Choose vault folder…"** — click it and grant access to the same folder you `init`-ed (via the browser's File System Access API). Chrome remembers the grant across sessions.
 
+Once connected, the popup shows the vault's folder name with a **switch** button to point at a different vault, and an **inbox N** badge in the header whenever captures are waiting (accept them with `pickmem review`).
+
 ### Pick and deliver
 
 The popup shows your groups and notes as the same **tree with group checkboxes** as the TUI (click a group to select its whole subtree; tri-state `[ ]`/`[~]`/`[x]`). Saved lenses appear as chips at the top; the bottom field saves the current selection as a new lens.
@@ -360,13 +381,14 @@ pickmem review
 
 ### Undoing an import
 
-An import only ever stages to the inbox — nothing is active yet — so to undo one, you just clear the pending items. They're machine-managed staging files (not notes you authored), so deleting them is safe:
+An import only ever stages to the inbox — nothing is active yet — so undoing one just clears the pending items:
 
 ```bash
-rm ~/PickMemVault/pickmem/inbox/*.md    # substitute your vault path
+pickmem inbox clear --source import --yes   # delete only import-staged items
+pickmem inbox clear --yes                   # …or everything pending
 ```
 
-That removes **all** pending inbox items, so only do the wildcard if the inbox holds just this import; otherwise delete the specific files. Your active notes and everything else in the vault are untouched. (The in-tool alternative is `pickmem review` and rejecting each with `r`, but for a big import the `rm` is faster.)
+Run it without `--yes` first to see what would be deleted. Only pending items are eligible — your active notes can never be touched by this command.
 
 ---
 
@@ -404,9 +426,12 @@ A **lens** is a named, saved selection — for a recurring task you don't want t
 - In the extension popup: select items, type a name in the bottom field, save.
 
 **Activate a lens** (replaces the current selection):
-- CLI: `pickmem pick` → `l` → choose one.
+- CLI: `pickmem lens use <name>` — scriptable, e.g. `alias workmode='pickmem lens use Work'`.
+- In the picker: `pickmem pick` → `l` → choose one.
 - Extension: click its chip.
 - From inside Claude Desktop: the model calls `use_lens("<name>")`.
+
+**Manage lenses from the CLI:** `pickmem lens list` (the `*` marks the active one) and `pickmem lens rm <name>` (deletes the lens; its notes are untouched).
 
 Ideas: `Job-Hunt`, `Client-Acme`, `Doctor-Visit`, `Gift-Sister` — anything that repeatedly pulls the same slice of your memory.
 
@@ -449,6 +474,10 @@ pickmem edit <id-or-suffix>                    # opens $EDITOR
 pickmem rm <id-or-suffix> --yes
 
 pickmem pick                                   # TUI picker → writes active.json
+pickmem status                                 # vault summary + current selection
+pickmem context [--copy]                       # print (or copy) the assembled block
+pickmem lens list | use <name> | rm <name>     # manage saved lenses
+pickmem inbox clear [--source import|extract|manual] --yes   # bulk-delete pending items
 
 pickmem serve                                  # MCP stdio server (clients launch this)
 pickmem install <claude-desktop|cursor> [--dry-run] [--name <n>] [--bin <path>]
@@ -467,7 +496,7 @@ pickmem review                                 # TUI to accept/reject/reassign i
 
 **"no vault path set"** — you haven't `init`-ed, or you're running a command before init. Run `pickmem init <path>`, set `$PICKMEM_VAULT`, or pass `--vault`.
 
-**`pickmem list` (or any command) errors on a parse/frontmatter problem** — a `.md` file in the vault has a `---` block with a missing or malformed `id`. Fix or delete that file. (Files with no frontmatter at all are ignored, not errored.)
+**"warning: skipped <file>: …"** — a `.md` file in the vault has a `---` block with a missing or malformed `id` (usually a half-typed note in Obsidian), or a duplicate id. The file is skipped, everything else works; fix or delete it to clear the warning. (Files with no frontmatter at all are ignored silently — they're your normal notes.)
 
 **"refusing to overwrite … create-only"** — you edited a file (probably in Obsidian) between PickMem reading it and trying to write it. That's the guard protecting your edit; re-run the command and it'll re-read your version.
 
@@ -477,7 +506,7 @@ pickmem review                                 # TUI to accept/reject/reassign i
 
 **Extension shows "input not found"** — the target site changed its markup. Insert is disabled but **Copy** still works; the adapter selector is a one-line fix in `extension/src/adapters/index.ts`.
 
-**Extension keeps opening the same old vault** — it remembers one folder handle in IndexedDB. To point it at a different folder: open the popup, right-click → **Inspect** → **Application** tab → **IndexedDB** → delete the `pickmem` database, then reopen the popup and choose the new folder. (Or just remove and re-load the unpacked extension, which wipes its storage.)
+**Pointing the extension at a different vault** — click **switch** next to the vault name at the top of the popup and pick the new folder.
 
 ---
 

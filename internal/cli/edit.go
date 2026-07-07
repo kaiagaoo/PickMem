@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/kaiagaoo/PickMem/internal/vault"
 	"github.com/spf13/cobra"
 )
 
@@ -14,11 +13,7 @@ func newEditCmd() *cobra.Command {
 		Long:  "Launches $EDITOR (or vi) on the note file. PickMem does not rewrite bytes itself, preserving the create-only invariant — you are the one making the change.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			root, err := vaultFlag(cmd)
-			if err != nil {
-				return err
-			}
-			s, err := vault.Open(root)
+			s, err := openVault(cmd)
 			if err != nil {
 				return err
 			}

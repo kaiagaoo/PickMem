@@ -21,9 +21,10 @@ type Store struct {
 	// Root is the absolute path to the vault directory.
 	Root string
 
-	mu      sync.RWMutex
-	notes   map[string]*Note    // id -> note (active and pending)
-	tracked map[string][32]byte // id -> sha256 of last-known bytes on disk
+	mu       sync.RWMutex
+	notes    map[string]*Note    // id -> note (active and pending)
+	tracked  map[string][32]byte // id -> sha256 of last-known bytes on disk
+	warnings []string            // per-file problems found during the last reindex
 }
 
 // Open loads the vault at root. Missing pickmem/ subdirectories are treated
@@ -90,11 +91,18 @@ func Init(root string) (*Store, error) {
 // reindex walks the vault, parses every .md file with frontmatter, and
 // rebuilds the id-keyed index. Files without frontmatter are silently
 // skipped so a user's other Obsidian notes don't confuse PickMem.
+//
+// A file with a malformed frontmatter block (or a duplicate id) is
+// skipped with a warning rather than failing the whole load — one
+// half-typed note in Obsidian must not brick every command. Warnings
+// accumulate in s.warnings (read via Warnings) so callers can surface
+// them once. Only real I/O failures abort the walk.
 func (s *Store) reindex() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.notes = map[string]*Note{}
 	s.tracked = map[string][32]byte{}
+	s.warnings = nil
 
 	return filepath.WalkDir(s.Root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -120,24 +128,36 @@ func (s *Store) reindex() error {
 		if !hasFrontmatter(data) {
 			return nil
 		}
-		n, err := ParseNote(data)
-		if err != nil {
-			// A malformed frontmatter block is worth surfacing so the
-			// user can fix or delete it.
-			return fmt.Errorf("parse %s: %w", path, err)
-		}
 		rel, err := filepath.Rel(s.Root, path)
 		if err != nil {
 			return err
 		}
-		n.RelPath = filepath.ToSlash(rel)
+		relSlash := filepath.ToSlash(rel)
+		n, err := ParseNote(data)
+		if err != nil {
+			s.warnings = append(s.warnings, fmt.Sprintf("skipped %s: %v (fix or delete the file)", relSlash, err))
+			return nil
+		}
+		n.RelPath = relSlash
 		if existing, dup := s.notes[n.ID]; dup {
-			return fmt.Errorf("duplicate id %s in %s and %s", n.ID, existing.RelPath, n.RelPath)
+			s.warnings = append(s.warnings, fmt.Sprintf("skipped %s: duplicate id %s (already used by %s)", relSlash, n.ID, existing.RelPath))
+			return nil
 		}
 		s.notes[n.ID] = n
 		s.tracked[n.ID] = sha256.Sum256(data)
 		return nil
 	})
+}
+
+// Warnings returns the per-file problems found during the most recent
+// (re)index: malformed frontmatter, duplicate ids. The affected files are
+// skipped, not fatal — surface these to the user so they can fix them.
+func (s *Store) Warnings() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]string, len(s.warnings))
+	copy(out, s.warnings)
+	return out
 }
 
 // Reload re-reads the vault from disk, discarding the in-memory index.

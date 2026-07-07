@@ -8,8 +8,16 @@
   <body>
     <header class="hdr">
       <div class="title">PickMem</div>
-      <div id="site-status" class="site-status">—</div>
+      <div class="hdr-right">
+        <span id="inbox-badge" class="inbox-badge hidden" title="Pending inbox items — review with `pickmem review`"></span>
+        <div id="site-status" class="site-status">—</div>
+      </div>
     </header>
+
+    <div id="vault-bar" class="vault-bar hidden">
+      <span id="vault-name" class="vault-name"></span>
+      <button id="btn-switch" class="linkbtn" title="Connect a different vault folder">switch</button>
+    </div>
 
     <section id="vault-empty" class="empty hidden">
       <p id="vault-empty-msg">No vault connected yet.</p>

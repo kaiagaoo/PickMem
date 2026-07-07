@@ -16,11 +16,7 @@ func newRmCmd() *cobra.Command {
 		Short: "Delete a memory note",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			root, err := vaultFlag(cmd)
-			if err != nil {
-				return err
-			}
-			s, err := vault.Open(root)
+			s, err := openVault(cmd)
 			if err != nil {
 				return err
 			}

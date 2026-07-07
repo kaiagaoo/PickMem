@@ -23,11 +23,7 @@ func newListCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List memory notes grouped by frontmatter group",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			root, err := vaultFlag(cmd)
-			if err != nil {
-				return err
-			}
-			s, err := vault.Open(root)
+			s, err := openVault(cmd)
 			if err != nil {
 				return err
 			}

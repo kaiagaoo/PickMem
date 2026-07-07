@@ -16,11 +16,7 @@ func newShowCmd() *cobra.Command {
 		Short: "Print a memory note by id (or its short suffix)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			root, err := vaultFlag(cmd)
-			if err != nil {
-				return err
-			}
-			s, err := vault.Open(root)
+			s, err := openVault(cmd)
 			if err != nil {
 				return err
 			}

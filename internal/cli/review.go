@@ -5,7 +5,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kaiagaoo/PickMem/internal/picker"
-	"github.com/kaiagaoo/PickMem/internal/vault"
 	"github.com/spf13/cobra"
 )
 
@@ -28,11 +27,7 @@ Keys:
 Accept moves the file from pickmem/inbox/ into its group folder and flips status to active.
 Reject deletes the inbox file. Pending items (no decision) stay in the inbox for later.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			root, err := vaultFlag(cmd)
-			if err != nil {
-				return err
-			}
-			s, err := vault.Open(root)
+			s, err := openVault(cmd)
 			if err != nil {
 				return err
 			}

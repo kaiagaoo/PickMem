@@ -115,12 +115,15 @@ go install ./cmd/pickmem      # → $(go env GOPATH)/bin; make sure it's on PATH
 ## ⚡ Quick start
 
 ```bash
-# 1. Create a vault (lays down a starter taxonomy + routing rules)
+# 1. Create a vault (starter taxonomy + routing rules + one
+#    fill-in-the-blank note per group — the vault starts as a form)
 pickmem init ~/PickMemVault
 
-# 2. Add a couple of memories
+# 2. Fill in the blanks (in Obsidian or $EDITOR)… 
+pickmem edit <id>       # ids are printed by `pickmem list`
+
+#    …and/or add your own memories
 pickmem add --label "salary" --group finance/income --body "monthly base \$8k + quarterly bonus"
-pickmem add --label "editor" --group about/preferences --body "uses vim; don't suggest vscode"
 
 # 3. Pick what this session should see
 pickmem pick

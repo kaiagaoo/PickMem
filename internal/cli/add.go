@@ -42,11 +42,7 @@ Examples:
 				return errors.New("--group is required (or use --inbox)")
 			}
 
-			root, err := vaultFlag(cmd)
-			if err != nil {
-				return err
-			}
-			s, err := vault.Open(root)
+			s, err := openVault(cmd)
 			if err != nil {
 				return err
 			}

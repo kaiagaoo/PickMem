@@ -38,16 +38,28 @@ reads**, not the folder name. The folders are just a starting shape.
 Groups nest with `/`. You can go deeper any time — e.g. `work/projects/acme` —
 and the picker will show it indented under its parent.
 
-## Adding your first memories
+## Fill in the blanks
+
+Each group starts with one **fill-in-the-blank note** (tagged `starter`), so
+this vault begins as a form, not an empty tree. Open any of them — in Obsidian
+or with `pickmem edit <id>` — and replace the `____` blanks:
+
+```
+Monthly income: ____        →   Monthly income: $8k base + quarterly bonus
+Other sources: ____         →   Other sources: freelance, ~$1k/mo
+```
+
+Fill in only the ones you care about; delete the rest with
+`pickmem rm <id> --yes`. A skipped blank is harmless — you simply won't pick
+that note. (If you delete one and want it back, `pickmem init <path> --force`
+restores missing skeletons without touching notes you've filled in.)
+
+## Adding more memories
 
 ```bash
 # a fact the model should know about you
 pickmem add --label "prefers direct feedback" --group about/preferences \
   --body "I want blunt, specific feedback — skip the hedging."
-
-# something concrete
-pickmem add --label "salary" --group finance/income \
-  --body "Monthly base $8k plus a quarterly bonus."
 ```
 
 Then run `pickmem pick`, select what's relevant to your task, and press `enter`.

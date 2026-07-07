@@ -420,6 +420,74 @@ func TestInboxRejectDeletes(t *testing.T) {
 	}
 }
 
+func TestReindexSkipsMalformedFrontmatterWithWarning(t *testing.T) {
+	s := newVault(t)
+	good, err := s.Add(&Note{
+		Frontmatter: Frontmatter{Label: "salary", Group: "finance"},
+		Body:        "monthly base $8k",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A half-typed Obsidian note: frontmatter block, no id.
+	bad := filepath.Join(s.Root, "finance", "draft.md")
+	if err := os.WriteFile(bad, []byte("---\nlabel: half-typed\n---\n\nbody\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// The load must succeed, keep the good note, and record a warning.
+	if err := s.Reload(); err != nil {
+		t.Fatalf("one malformed file failed the whole load: %v", err)
+	}
+	if _, ok := s.Get(good.ID); !ok {
+		t.Error("good note lost after reload with a malformed sibling")
+	}
+	ws := s.Warnings()
+	if len(ws) != 1 || !strings.Contains(ws[0], "finance/draft.md") {
+		t.Errorf("warnings = %v, want one mentioning finance/draft.md", ws)
+	}
+	// A clean reload clears the warning.
+	if err := os.Remove(bad); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Reload(); err != nil {
+		t.Fatal(err)
+	}
+	if ws := s.Warnings(); len(ws) != 0 {
+		t.Errorf("warnings not cleared after clean reload: %v", ws)
+	}
+}
+
+func TestReindexSkipsDuplicateIDWithWarning(t *testing.T) {
+	s := newVault(t)
+	n, err := s.Add(&Note{
+		Frontmatter: Frontmatter{Label: "salary", Group: "finance"},
+		Body:        "monthly base $8k",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A stray copy of the note (e.g. a user's manual file duplicate).
+	src := filepath.Join(s.Root, filepath.FromSlash(n.RelPath))
+	data, err := os.ReadFile(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dup := filepath.Join(s.Root, "finance", "salary-copy.md")
+	if err := os.WriteFile(dup, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Reload(); err != nil {
+		t.Fatalf("duplicate id failed the whole load: %v", err)
+	}
+	if _, ok := s.Get(n.ID); !ok {
+		t.Error("note with duplicated id missing from index entirely")
+	}
+	ws := s.Warnings()
+	if len(ws) != 1 || !strings.Contains(ws[0], "duplicate id") {
+		t.Errorf("warnings = %v, want one duplicate-id warning", ws)
+	}
+}
+
 // ---------- The create-only invariant: user-authored files are inviolable ----------
 
 // TestCreateOnlyNeverRewritesUserAuthoredFile is the load-bearing test for

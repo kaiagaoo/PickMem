@@ -17,7 +17,7 @@ func newInitCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init <path>",
 		Short: "Scaffold a new PickMem vault at <path>",
-		Long:  "Creates the pickmem/ subdirectory with inbox/, config.json, lenses.json, and active.json, and lays down the starter taxonomy (group folders + routing rules + a vault README). Pass --bare for an empty vault instead. Records the vault path in the user config so subsequent commands don't need --vault.",
+		Long:  "Creates the pickmem/ subdirectory with inbox/, config.json, lenses.json, and active.json, and lays down the starter taxonomy (group folders + routing rules + a vault README) with one fill-in-the-blank note per group so the vault starts as a form to complete. Pass --bare for an empty vault instead. Records the vault path in the user config so subsequent commands don't need --vault.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			target, err := filepath.Abs(args[0])
@@ -50,6 +50,7 @@ func newInitCmd() *cobra.Command {
 			}
 			// Stamp the template name onto whatever config is now on disk
 			// (either the template's or the freshly-written default).
+			seeded := 0
 			if applyTemplate {
 				cfg, err := s.LoadConfig()
 				if err != nil {
@@ -58,6 +59,13 @@ func newInitCmd() *cobra.Command {
 				cfg.TemplateName = templates.DefaultName
 				if err := s.SaveConfig(cfg); err != nil {
 					return err
+				}
+				// Seed the fill-in-the-blank starter notes. SeedNotes skips
+				// any (group, label) that already exists, so --force on a
+				// vault the user has been filling in only restores missing
+				// skeletons — it never duplicates.
+				if seeded, err = templates.SeedNotes(s); err != nil {
+					return fmt.Errorf("seed starter notes: %w", err)
 				}
 			}
 
@@ -70,7 +78,11 @@ func newInitCmd() *cobra.Command {
 			if applyTemplate {
 				fmt.Fprintln(cmd.OutOrStdout(), "Laid down the starter taxonomy — see README.md in the vault for the map.")
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), "Set as default vault. Try: pickmem add --label ... --group ...")
+			if seeded > 0 {
+				fmt.Fprintf(cmd.OutOrStdout(), "Seeded %d fill-in-the-blank notes (tagged '%s'), one per group.\n", seeded, templates.StarterTag)
+				fmt.Fprintln(cmd.OutOrStdout(), "Fill in the blanks in Obsidian or with `pickmem edit <id>`; delete what you don't need with `pickmem rm <id> --yes`.")
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), "Set as default vault. Try: pickmem list")
 			return nil
 		},
 	}

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/kaiagaoo/PickMem/internal/vault"
+	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // ---------- fixture ----------

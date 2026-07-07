@@ -108,6 +108,22 @@ function wireButtons() {
   });
   qs("#btn-add-cancel").addEventListener("click", closeAddForm);
   qs("#btn-add-save").addEventListener("click", onAddNote);
+
+  // Switch vault: grantVault() persists the newly-picked handle over the
+  // old one, so a cancelled picker (AbortError) leaves the current vault
+  // connected — no clear-then-restore dance needed.
+  qs("#btn-switch").addEventListener("click", async () => {
+    try {
+      state.handle = await grantVault();
+      state.selected = new Set();
+      state.activeLens = "";
+      await refreshVault();
+      toast(`Connected "${state.handle.name}"`);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      toast(String(e), true);
+    }
+  });
 }
 
 async function refreshVault() {
@@ -124,9 +140,34 @@ async function refreshVault() {
     return;
   }
   showLoaded();
+  renderVaultBar();
+  renderInboxBadge();
   renderLenses();
   renderItems();
   renderSummary();
+}
+
+// ---------- header extras ----------
+
+function renderVaultBar() {
+  if (!state.handle) return;
+  qs("#vault-bar").classList.remove("hidden");
+  qs("#vault-name").textContent = state.handle.name;
+  qs("#vault-name").title = "Connected vault folder";
+}
+
+// renderInboxBadge surfaces pending captures so they don't pile up
+// invisibly — the browser can stage to the inbox but (for now) only
+// `pickmem review` can accept.
+function renderInboxBadge() {
+  const el = qs("#inbox-badge");
+  const n = state.vault?.pending.length ?? 0;
+  if (n === 0) {
+    el.classList.add("hidden");
+    return;
+  }
+  el.classList.remove("hidden");
+  el.textContent = `inbox ${n}`;
 }
 
 // ---------- rendering ----------
@@ -527,6 +568,8 @@ function qs<T extends HTMLElement = HTMLElement>(sel: string): T {
 
 function showEmpty(needsReconnect = false) {
   qs("#vault-empty").classList.remove("hidden");
+  qs("#vault-bar").classList.add("hidden");
+  qs("#inbox-badge").classList.add("hidden");
   qs("#lenses").classList.add("hidden");
   qs("#items").classList.add("hidden");
   qs("#save-lens").classList.add("hidden");
@@ -560,6 +603,7 @@ function toast(msg: string, err = false) {
   toastTimer = window.setTimeout(() => el.classList.add("hidden"), 2400);
 }
 
-// Silence the unused-import warning while we don't need this yet — kept
-// so future "reset vault" actions don't have to add an import.
+// Silence the unused-import warning — kept so a future explicit
+// "disconnect vault" action doesn't have to re-add the import. (Switching
+// vaults doesn't need it: grantVault overwrites the stored handle.)
 void clearVaultHandle;

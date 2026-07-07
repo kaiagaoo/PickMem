@@ -17,11 +17,7 @@ func newPickCmd() *cobra.Command {
 
 The default is nothing — the picker opens with your last active selection (or nothing on a fresh vault). Confirming with no items selected clears active.json, matching the "user decides relevance" invariant.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			root, err := vaultFlag(cmd)
-			if err != nil {
-				return err
-			}
-			s, err := vault.Open(root)
+			s, err := openVault(cmd)
 			if err != nil {
 				return err
 			}
@@ -54,10 +50,17 @@ The default is nothing — the picker opens with your last active selection (or 
 				label = result.ActiveLens
 			}
 			if len(result.ItemIDs) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "Active selection cleared.")
+				fmt.Fprintln(cmd.OutOrStdout(), "Active selection cleared — the model now sees nothing.")
 				return nil
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Active: %s · %d items\n", label, len(result.ItemIDs))
+			var bodies []string
+			for _, id := range result.ItemIDs {
+				if n, ok := s.Get(id); ok {
+					bodies = append(bodies, n.Body)
+				}
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Active: %s · %d items · ~%d tokens\n", label, len(result.ItemIDs), picker.EstimateTokens(bodies))
+			fmt.Fprintln(cmd.OutOrStdout(), "See exactly what the model gets: pickmem context")
 			return nil
 		},
 	}

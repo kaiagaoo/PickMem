@@ -60,6 +60,33 @@ body {
   font-size: 11px;
   color: var(--muted);
 }
+.hdr-right {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.inbox-badge {
+  font-size: 11px;
+  color: var(--bg);
+  background: var(--accent);
+  border-radius: 8px;
+  padding: 1px 7px;
+  cursor: default;
+}
+.vault-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--panel);
+  font-size: 11px;
+}
+.vault-name {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .section-title {
   font-size: 11px;
