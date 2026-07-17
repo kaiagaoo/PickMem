@@ -29,16 +29,22 @@ const (
 	TypeReference = "reference" // external material: a quote, link, excerpt
 )
 
-// NormalizeType maps a raw type string to a known kind, defaulting to
-// TypeFact for empty or unrecognized values so a slightly-future note is
-// treated as a plain memory rather than dropped.
+// DefaultNoteTypes is the built-in type vocabulary a vault starts with. Users
+// can customize the list (see Config.NoteTypes); TypeFact stays the canonical
+// default and is always available.
+func DefaultNoteTypes() []string {
+	return []string{TypeFact, TypeIdea, TypeThought, TypeReference}
+}
+
+// NormalizeType canonicalizes a raw type string. An empty value becomes
+// TypeFact (the default, omitted on disk); any other non-empty value is kept
+// as-is, so user-defined types survive. Trimmed for tidiness.
 func NormalizeType(s string) string {
-	switch s {
-	case TypeIdea, TypeThought, TypeReference:
-		return s
-	default:
+	s = strings.TrimSpace(s)
+	if s == "" {
 		return TypeFact
 	}
+	return s
 }
 
 // Frontmatter is the YAML block at the top of a memory note. Field order in

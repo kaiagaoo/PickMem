@@ -23,8 +23,8 @@
 `pickmem web` opens a local app in your browser — a calm three-zone workspace over your own vault:
 
 ```
-┌───────────────┬─────────────────────────────────────┬───────────────────────┐
-│ 📌 My memory ▾│  All memories / finance              │  ACTIVE MEMORY        │
+┌───────────────┬──────────────────────────────────────┬───────────────────────┐
+│ My memory ▾   │  All memories / finance              │  ACTIVE MEMORY        │
 │               │  ─────────────────────────────────   │  Lens: Advice ▾       │
 │  ▸ about      │  ▸ income   ▸ bills   ▸ goals        │  ● Salary             │
 │  ▾ finance    │                                      │  ● Anemia             │
@@ -34,7 +34,7 @@
 │  ─────────    │  └───────────────────────────────┘   │  text · md · json     │
 │  ✦ Lenses     │                                      │  [ Copy context ]     │
 │  Inbox (0)    │                        [+ Memory]    │  [ Save as lens ]     │
-└───────────────┴─────────────────────────────────────┴───────────────────────┘
+└───────────────┴──────────────────────────────────────┴───────────────────────┘
    navigate            browse & pick               the slice the model gets
 ```
 

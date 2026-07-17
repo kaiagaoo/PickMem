@@ -136,7 +136,7 @@ func buildState(s *vault.Store) (stateDTO, error) {
 		Active:    activeDTO{ActiveLens: active.ActiveLens, ItemIDs: ids},
 		Context:   ctx,
 		Tokens:    picker.EstimateTokens(bodies),
-		NoteTypes: []string{vault.TypeFact, vault.TypeIdea, vault.TypeThought, vault.TypeReference},
+		NoteTypes: s.NoteTypes(),
 		Warnings:  s.Warnings(),
 		Vaults:    recentVaultRefs(s.Root),
 	}, nil

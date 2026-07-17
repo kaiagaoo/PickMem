@@ -68,6 +68,12 @@ export const api = {
   setVaultName: (name: string) =>
     request("/vault/name", { method: "PUT", body: JSON.stringify({ name }) }),
 
+  setNoteTypes: (types: string[]) =>
+    request("/note-types", { method: "PUT", body: JSON.stringify({ types }) }),
+
+  renameNoteType: (from: string, to: string) =>
+    request("/note-types/rename", { method: "POST", body: JSON.stringify({ from, to }) }),
+
   clearVault: () => request("/vault/clear", { method: "POST" }),
 
   importVault: (blob: unknown) =>

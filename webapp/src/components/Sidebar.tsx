@@ -26,7 +26,13 @@ export function Sidebar({
 
       <div className="sb-section grow">
         <div className="sb-heading">
-          Vault
+          <button
+            className={`sb-home ${view === "vault" && nav.kind === "group" && nav.path === "" ? "active" : ""}`}
+            onClick={() => handlers.onNavGroup("")}
+            title="Back to all memories"
+          >
+            All memories
+          </button>
           <button className="link right" onClick={() => handlers.onNewSubgroup("")}>
             + group
           </button>

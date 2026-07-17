@@ -38,22 +38,26 @@ export function GroupView({ path, h }: { path: string; h: GroupViewHandlers }) {
 
   return (
     <section className="group-view">
-      <nav className="breadcrumb">
-        <button className={isRoot ? "bc-cur" : "bc-link"} onClick={() => h.onNavGroup("")}>
-          All memories
-        </button>
-        {bc.map((c, i) => (
-          <span key={c.path}>
-            <span className="bc-sep">/</span>
-            <button
-              className={i === bc.length - 1 ? "bc-cur mono" : "bc-link mono"}
-              onClick={() => h.onNavGroup(c.path)}
-            >
-              {c.name}
-            </button>
-          </span>
-        ))}
-      </nav>
+      {/* At the root the breadcrumb would just repeat the "All memories"
+          title, so it only shows once you've drilled into a group. */}
+      {!isRoot && (
+        <nav className="breadcrumb">
+          <button className="bc-link" onClick={() => h.onNavGroup("")}>
+            All memories
+          </button>
+          {bc.map((c, i) => (
+            <span key={c.path}>
+              <span className="bc-sep">/</span>
+              <button
+                className={i === bc.length - 1 ? "bc-cur mono" : "bc-link mono"}
+                onClick={() => h.onNavGroup(c.path)}
+              >
+                {c.name}
+              </button>
+            </span>
+          ))}
+        </nav>
+      )}
 
       <div className="gv-head">
         <h1 className="gv-title">{isRoot ? "All memories" : bc[bc.length - 1].name}</h1>
@@ -95,7 +99,7 @@ export function GroupView({ path, h }: { path: string; h: GroupViewHandlers }) {
                   onChange={() => actions.toggleGroup(ids, p !== ids.length)}
                 />
                 <span className="folder-ico">▸</span>
-                <span className="folder-name mono">{sg.name}</span>
+                <span className="folder-name">{sg.name}</span>
                 <span className="folder-count">
                   {p}/{ids.length}
                 </span>

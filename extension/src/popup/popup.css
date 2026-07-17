@@ -1,28 +1,39 @@
-/* Popup fits Chrome's default width comfortably. Kept restrained — Nord-
-   ish palette, no third-party UI framework, no fancy transitions. */
+/* Extension popup — aligned with the PickMem web app: warm paper/ink
+   neutrals, a single purple accent reserved for the "picked/active" state,
+   and the same read-friendly system-UI font. Follows the OS light/dark
+   preference, like the web app. */
 
 :root {
-  --bg: #2e3440;
-  --panel: #3b4252;
-  --fg: #eceff4;
-  --muted: #d8dee9;
-  --dim: #4c566a;
-  --accent: #88c0d0;
-  --sel: #a3be8c;
-  --warn: #bf616a;
-  --radius: 6px;
+  --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* light (base) — mirrors the web app's tokens */
+  --bg: #faf8f4; /* paper */
+  --panel: #f0ece3; /* subtle surface: hovers, inputs, footer */
+  --line: #e2dcd0; /* separators */
+  --dim: #cfc7b8; /* control borders */
+  --fg: #26231e; /* ink */
+  --muted: #6f695f; /* secondary text */
+  --accent: #6b4bff; /* the web purple */
+  --accent-soft: #efeaff; /* picked-row background */
+  --sel: #6b4bff; /* selected = purple */
+  --warn: #c0492f; /* danger */
+  --radius: 8px;
 }
 
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
-    --bg: #ffffff;
-    --panel: #f5f6f8;
-    --fg: #2e3440;
-    --muted: #4c566a;
-    --dim: #a9b0bd;
-    --accent: #4c86a0;
-    --sel: #66854d;
-    --warn: #a54650;
+    --bg: #17151a;
+    --panel: #201d24;
+    --line: #2e2a33;
+    --dim: #3a3542;
+    --fg: #ece8f0;
+    --muted: #9a94a3;
+    --accent: #9b86ff;
+    --accent-soft: #2a2440;
+    --sel: #9b86ff;
+    --warn: #f2857a;
   }
 }
 
@@ -39,8 +50,9 @@ body {
   max-height: 560px;
   background: var(--bg);
   color: var(--fg);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font);
   font-size: 13px;
+  -webkit-font-smoothing: antialiased;
   display: flex;
   flex-direction: column;
 }
@@ -50,10 +62,11 @@ body {
   align-items: baseline;
   justify-content: space-between;
   padding: 10px 12px 6px;
-  border-bottom: 1px solid var(--panel);
+  border-bottom: 1px solid var(--line);
 }
 .title {
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--accent);
 }
 .site-status {
@@ -67,9 +80,9 @@ body {
 }
 .inbox-badge {
   font-size: 11px;
-  color: var(--bg);
+  color: #fff;
   background: var(--accent);
-  border-radius: 8px;
+  border-radius: 999px;
   padding: 1px 7px;
   cursor: default;
 }
@@ -78,7 +91,7 @@ body {
   align-items: baseline;
   justify-content: space-between;
   padding: 4px 12px;
-  border-bottom: 1px solid var(--panel);
+  border-bottom: 1px solid var(--line);
   font-size: 11px;
 }
 .vault-name {
@@ -93,11 +106,12 @@ body {
   text-transform: uppercase;
   color: var(--muted);
   letter-spacing: 0.06em;
+  font-weight: 700;
   margin: 8px 12px 4px;
 }
 
 .lenses {
-  border-bottom: 1px solid var(--panel);
+  border-bottom: 1px solid var(--line);
   padding-bottom: 6px;
 }
 .lenses-list {
@@ -107,7 +121,7 @@ body {
   padding: 0 12px 6px;
 }
 .lens-chip {
-  padding: 3px 8px;
+  padding: 3px 10px;
   border: 1px solid var(--dim);
   border-radius: 999px;
   cursor: pointer;
@@ -118,7 +132,7 @@ body {
 .lens-chip.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--bg);
+  color: #fff;
 }
 .lens-chip:hover {
   border-color: var(--accent);
@@ -134,16 +148,29 @@ body {
 #filter {
   width: calc(100% - 24px);
   margin: 4px 12px 8px;
-  padding: 6px 8px;
+  padding: 6px 9px;
   border: 1px solid var(--dim);
   border-radius: var(--radius);
-  background: var(--panel);
+  background: var(--bg);
   color: var(--fg);
+  font-family: var(--font);
   font-size: 12px;
   outline: none;
 }
 #filter:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 6px;
+  font-size: 12px;
+}
+.bulk-actions .sep {
+  color: var(--dim);
 }
 
 .group-header {
@@ -152,7 +179,7 @@ body {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-weight: 600;
+  font-weight: 700;
 }
 .grouprow {
   display: flex;
@@ -166,12 +193,13 @@ body {
   background: var(--panel);
 }
 .grouprow.selected {
+  background: var(--accent-soft);
   border-left-color: var(--sel);
 }
 .grouprow .box {
   color: var(--dim);
   flex: 0 0 auto;
-  font-family: ui-monospace, monospace;
+  font-family: var(--mono);
 }
 .grouprow.selected .box {
   color: var(--sel);
@@ -179,7 +207,7 @@ body {
 .grouprow .grouplabel {
   flex: 1;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--fg);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -196,12 +224,13 @@ body {
   background: var(--panel);
 }
 .item.selected {
+  background: var(--accent-soft);
   border-left-color: var(--sel);
 }
 .item .box {
   color: var(--dim);
   flex: 0 0 auto;
-  font-family: ui-monospace, monospace;
+  font-family: var(--mono);
 }
 .item.selected .box {
   color: var(--sel);
@@ -219,18 +248,19 @@ body {
 
 .add {
   padding: 6px 12px;
-  border-top: 1px solid var(--panel);
+  border-top: 1px solid var(--line);
 }
 .linkbtn {
   background: none;
   border: none;
   padding: 0;
-  color: var(--muted);
+  color: var(--accent);
   font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
 }
 .linkbtn:hover {
-  color: var(--accent);
+  text-decoration: underline;
 }
 .add-form {
   display: flex;
@@ -240,19 +270,20 @@ body {
 }
 .add-form input,
 .add-form textarea {
-  padding: 5px 8px;
+  padding: 6px 9px;
   border: 1px solid var(--dim);
   border-radius: var(--radius);
-  background: var(--panel);
+  background: var(--bg);
   color: var(--fg);
   font-size: 12px;
   outline: none;
-  font-family: inherit;
+  font-family: var(--font);
   resize: vertical;
 }
 .add-form input:focus,
 .add-form textarea:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .add-actions {
   display: flex;
@@ -261,29 +292,34 @@ body {
 }
 .add-actions .btn {
   flex: 0 0 auto;
-  padding: 4px 12px;
+  padding: 5px 12px;
 }
 
 .save-lens {
   display: flex;
   gap: 6px;
   padding: 6px 12px;
-  border-top: 1px solid var(--panel);
+  border-top: 1px solid var(--line);
 }
 .save-lens input {
   flex: 1;
-  padding: 4px 8px;
+  padding: 5px 9px;
   border: 1px solid var(--dim);
   border-radius: var(--radius);
-  background: var(--panel);
+  background: var(--bg);
   color: var(--fg);
+  font-family: var(--font);
   font-size: 12px;
   outline: none;
+}
+.save-lens input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .footer {
   padding: 8px 12px;
-  border-top: 1px solid var(--panel);
+  border-top: 1px solid var(--line);
   background: var(--panel);
   position: sticky;
   bottom: 0;
@@ -302,9 +338,10 @@ body {
   padding: 6px 10px;
   border: 1px solid var(--dim);
   border-radius: var(--radius);
-  background: transparent;
+  background: var(--bg);
   color: var(--fg);
   cursor: pointer;
+  font-family: var(--font);
   font-size: 12px;
 }
 .btn:hover:not([disabled]) {
@@ -313,8 +350,11 @@ body {
 .btn.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--bg);
+  color: #fff;
   font-weight: 600;
+}
+.btn.primary:hover:not([disabled]) {
+  filter: brightness(1.06);
 }
 .btn[disabled] {
   opacity: 0.4;
@@ -331,7 +371,7 @@ body {
 }
 .empty .hint {
   font-size: 11px;
-  color: var(--dim);
+  color: var(--muted);
   margin-top: 12px;
 }
 

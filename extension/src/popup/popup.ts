@@ -93,6 +93,9 @@ function wireButtons() {
     renderItems();
   });
 
+  qs("#btn-select-all").addEventListener("click", selectAllFiltered);
+  qs("#btn-clear-all").addEventListener("click", clearAll);
+
   qs("#btn-save-lens").addEventListener("click", saveCurrentAsLens);
   qs<HTMLInputElement>("#lens-name").addEventListener("keydown", (e) => {
     if (e.key === "Enter") saveCurrentAsLens();
@@ -337,6 +340,29 @@ function toggleGroup(ids: string[]) {
   } else {
     for (const id of ids) state.selected.add(id);
   }
+  state.activeLens = "";
+  renderLenses();
+  renderItems();
+  renderSummary();
+}
+
+// selectAllFiltered adds every item currently shown (respecting the filter)
+// to the selection. Clearing the filter first would select the whole vault.
+function selectAllFiltered() {
+  if (!state.vault) return;
+  const q = state.filter.trim().toLowerCase();
+  for (const n of state.vault.active) {
+    if (!q || matches(n, q)) state.selected.add(n.id);
+  }
+  state.activeLens = "";
+  renderLenses();
+  renderItems();
+  renderSummary();
+}
+
+// clearAll empties the whole selection.
+function clearAll() {
+  state.selected.clear();
   state.activeLens = "";
   renderLenses();
   renderItems();

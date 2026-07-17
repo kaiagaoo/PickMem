@@ -68,6 +68,45 @@ func (s *Server) handleDeleteGroup(w http.ResponseWriter, r *http.Request) {
 	s.writeState(w)
 }
 
+// handleSetNoteTypes persists the vault's type vocabulary into config.json.
+// The store normalizes the list (fact guaranteed, de-duped) on read, so we
+// just store what the client sends.
+func (s *Server) handleSetNoteTypes(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Types []string `json:"types"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	cfg, err := s.store.LoadConfig()
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	cfg.NoteTypes = req.Types
+	if err := s.store.SaveConfig(cfg); err != nil {
+		writeErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	s.writeState(w)
+}
+
+// handleRenameNoteType renames a type and updates every note using it.
+func (s *Server) handleRenameNoteType(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		From string `json:"from"`
+		To   string `json:"to"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	if _, err := s.store.RenameNoteType(req.From, req.To); err != nil {
+		writeErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	s.writeState(w)
+}
+
 // handleSetVaultName persists a cosmetic vault name into config.json.
 func (s *Server) handleSetVaultName(w http.ResponseWriter, r *http.Request) {
 	var req struct {

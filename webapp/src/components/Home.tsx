@@ -4,6 +4,7 @@ import type { Nav, Note, View } from "../types";
 import { Sidebar } from "./Sidebar";
 import { GroupView } from "./GroupView";
 import { NoteDetail } from "./NoteDetail";
+import { SearchResults } from "./SearchResults";
 import { ActiveTray } from "./ActiveTray";
 import { InboxView } from "./InboxView";
 import { LensManager } from "./LensManager";
@@ -37,6 +38,8 @@ export function Home({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) =
   const [view, setView] = useState<View>("vault");
   const [nav, setNav] = useState<Nav>({ kind: "group", path: "" });
   const [editor, setEditor] = useState<EditorState | null>(null);
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Note | null>(null);
   const [pendingGroupDelete, setPendingGroupDelete] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<PromptState | null>(null);
@@ -49,6 +52,8 @@ export function Home({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) =
       prevVault.current = vaultPath;
       setNav({ kind: "group", path: "" });
       setView("vault");
+      setQuery("");
+      setTypeFilter("");
     }
   }, [vaultPath]);
 
@@ -110,10 +115,55 @@ export function Home({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) =
   const center = () => {
     switch (view) {
       case "vault":
-        return nav.kind === "note" ? (
-          <NoteDetail id={nav.id} onNavGroup={goGroup} onEdit={handlers.onEditNote} onDelete={handlers.onDeleteNote} />
-        ) : (
-          <GroupView path={nav.path} h={handlers} />
+        return (
+          <div className="vault-browser">
+            <div className="filter-bar">
+              <input
+                className="filter-input"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Filter memories…"
+              />
+              <select
+                className="type-filter"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                title="Filter by type"
+              >
+                <option value="">All types</option>
+                {state.note_types.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+              {(query || typeFilter) && (
+                <button
+                  className="filter-clear"
+                  onClick={() => {
+                    setQuery("");
+                    setTypeFilter("");
+                  }}
+                  title="Clear filter"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            {query.trim() || typeFilter ? (
+              <SearchResults
+                query={query}
+                typeFilter={typeFilter}
+                onNavNote={goNote}
+                onEdit={handlers.onEditNote}
+                onDelete={handlers.onDeleteNote}
+              />
+            ) : nav.kind === "note" ? (
+              <NoteDetail id={nav.id} onNavGroup={goGroup} onEdit={handlers.onEditNote} onDelete={handlers.onDeleteNote} />
+            ) : (
+              <GroupView path={nav.path} h={handlers} />
+            )}
+          </div>
         );
       case "inbox":
         return <InboxView onEdit={(n) => setEditor({ note: n })} />;

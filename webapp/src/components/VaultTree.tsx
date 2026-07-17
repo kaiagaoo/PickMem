@@ -79,7 +79,7 @@ function Branch({
         />
         <button className="tree-label" onClick={() => h.onNavGroup(node.path)}>
           <span className="folder-ico">{open ? "▾" : "▸"}</span>
-          <span className="tl-name mono">{node.name}</span>
+          <span className="tl-name">{node.name}</span>
           <span className="tl-count">{ids.length}</span>
         </button>
         <Menu
