@@ -4,10 +4,18 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/kaiagaoo/PickMem/main/install.sh | sh
 #
+# This installs everything: the `pickmem` binary (TUI + MCP server + the
+# built-in web app, which is embedded in the binary and served by `pickmem
+# web`) AND the Chrome extension, unpacked into a folder you can "Load
+# unpacked" directly.
+#
 # Options (env vars):
-#   PICKMEM_VERSION      install a specific tag, e.g. v0.1.1 (default: latest)
-#   PICKMEM_INSTALL_DIR  target dir (default: /usr/local/bin if writable,
-#                        else ~/.local/bin)
+#   PICKMEM_VERSION        install a specific tag, e.g. v0.1.1 (default: latest)
+#   PICKMEM_INSTALL_DIR    binary target dir (default: /usr/local/bin if
+#                          writable, else ~/.local/bin)
+#   PICKMEM_EXTENSION_DIR  where to unpack the Chrome extension
+#                          (default: ~/.local/share/pickmem/extension)
+#   PICKMEM_NO_EXTENSION   set to 1 to skip the Chrome extension entirely
 #
 # POSIX sh on purpose — works under dash/ash so `curl | sh` behaves the
 # same on minimal Linux images as on macOS.
@@ -107,7 +115,50 @@ case ":$PATH:" in
     ;;
 esac
 
+# ---------- Chrome extension ----------
+#
+# The release ships the extension pre-built and zipped. Unpack it into a
+# stable folder so the user can point Chrome's "Load unpacked" at it. The
+# path never changes across upgrades, so re-running this script just refreshes
+# the files in place — reload the extension in chrome://extensions afterward.
+
+EXT_DIR="${PICKMEM_EXTENSION_DIR:-$HOME/.local/share/pickmem/extension}"
+
+if [ "${PICKMEM_NO_EXTENSION:-}" = "1" ]; then
+  say ""
+  say "Skipping Chrome extension (PICKMEM_NO_EXTENSION=1)."
+elif ! command -v unzip >/dev/null 2>&1; then
+  say ""
+  say "Note: 'unzip' not found; skipping the Chrome extension."
+  say "  Install it, or download the zip manually from:"
+  say "  https://github.com/$REPO/releases/download/$TAG/pickmem-extension_${TAG}.zip"
+else
+  EXT_ASSET="pickmem-extension_${TAG}.zip"
+  say ""
+  say "Downloading $EXT_ASSET…"
+  if curl -fsSL "$BASE/$EXT_ASSET" -o "$TMP/$EXT_ASSET" 2>/dev/null; then
+    # Fresh dir each time so an old build can't leave stale files behind.
+    rm -rf "$EXT_DIR"
+    mkdir -p "$EXT_DIR"
+    unzip -qo "$TMP/$EXT_ASSET" -d "$EXT_DIR"
+    say "Chrome extension unpacked to $EXT_DIR"
+  else
+    say "Note: $TAG has no extension asset; skipping the Chrome extension."
+    EXT_DIR=""
+  fi
+fi
+
 say ""
 say "Get started:"
 say "  $BINARY init ~/PickMemVault    # create your vault"
+say "  $BINARY web ~/PickMemVault     # open the web app (embedded, no build)"
 say "  $BINARY --help"
+
+if [ -n "${EXT_DIR:-}" ] && [ -d "$EXT_DIR" ]; then
+  say ""
+  say "Load the Chrome extension (one-time):"
+  say "  1. Open chrome://extensions"
+  say "  2. Enable \"Developer mode\" (top-right toggle)"
+  say "  3. Click \"Load unpacked\" and select:"
+  say "       $EXT_DIR"
+fi

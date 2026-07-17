@@ -74,7 +74,7 @@ Notes are Markdown files with a small frontmatter header. **Folders are your cat
 curl -fsSL https://raw.githubusercontent.com/kaiagaoo/PickMem/main/install.sh | sh
 ```
 
-Detects your OS/arch, verifies the checksum, installs to `/usr/local/bin` (or `~/.local/bin` without sudo). The web UI is embedded in the binary — nothing else to install. <sub>Windows: grab the `_windows_amd64.zip` from the [releases page](https://github.com/kaiagaoo/PickMem/releases/latest). From source: `go install ./cmd/pickmem` (Go 1.26+).</sub>
+Detects your OS/arch, verifies the checksum, installs the binary to `/usr/local/bin` (or `~/.local/bin` without sudo), **and** unpacks the Chrome extension to `~/.local/share/pickmem/extension`. The web UI is embedded in the binary — nothing to build. That's everything: web + extension in one command. <sub>Windows: grab the `_windows_amd64.zip` from the [releases page](https://github.com/kaiagaoo/PickMem/releases/latest). From source: `go install ./cmd/pickmem` (Go 1.26+).</sub>
 
 Then:
 
@@ -109,7 +109,7 @@ The app opens at `http://127.0.0.1:4577`. A brand-new vault greets you with a sh
 
 <p align="center"><img src="docs/images/ext-popup.png" width="380" alt="PickMem Chrome extension popup — lenses, pickable memory tree, Insert button"></p>
 
-If you installed via the one-liner, download **`pickmem-extension_<version>.zip`** from the [latest release](https://github.com/kaiagaoo/PickMem/releases/latest), unzip it, then in Chrome open `chrome://extensions` → enable **Developer mode** → **Load unpacked** → pick the unzipped folder. From a clone, build it instead:
+If you installed via the one-liner, the extension is already unpacked at **`~/.local/share/pickmem/extension`** — just open `chrome://extensions` → enable **Developer mode** → **Load unpacked** → pick that folder. (Re-running the installer refreshes it in place; reload the extension afterward.) From a clone, build it instead:
 
 ```bash
 cd extension && npm install && npm run build
