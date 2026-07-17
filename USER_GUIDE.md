@@ -194,7 +194,7 @@ The **Active Memory** tray on the right shows the running selection, an item cou
 
 ### 5.6 Add, edit, and open notes
 
-**Add** — click **+ Memory** (in a group's header, so it's pre-filed there) or use **Add memory here** from a group's ⋯ menu. The editor has a **label**, the **memory** text, a **type** (fact / idea / thought / reference), a **group** (type a new `a/b` path or pick an existing one), optional **tags**, and a **live preview** of the finished card. Save routes the note to **active** by default; a de-emphasized **"Send to inbox instead"** stages it for later review.
+**Add** — click **+ Memory** (in a group's header, so it's pre-filed there) or use **Add memory here** from a group's ⋯ menu. The editor has a **label**, the **memory** text, a **group** (type a new `a/b` path or pick an existing one), and optional **tags** — with one-click **suggested tag chips** (`fact` / `idea` / `thought` / `reference` by default; customize the list in Settings). Save routes the note to **active** by default; a de-emphasized **"Send to inbox instead"** stages it for later review.
 
 **Open** — click a note's **title** to open its detail view: the full body, tags, provenance, and **Edit / Delete** actions, plus a pick toggle.
 
@@ -202,7 +202,7 @@ The **Active Memory** tray on the right shows the running selection, an item cou
 
 **Delete** — removes the note's file (with a confirm). Deleting also drops the note's id from any lens or the active selection that referenced it.
 
-> **Note types.** A note isn't only "a fact about me." The type says what kind it is, so you can later pick "my *ideas* about this project" separately from stable facts. `fact` is the default and is left off disk, so plain memories stay byte-clean.
+> **Tags, not types.** A note isn't only "a fact about me." Tag it `idea` or `thought` and you can later filter "my *ideas* about this project" apart from stable facts. The suggested chips are ordinary tags — nothing special on disk — so tag freely and rename the suggestions in Settings.
 
 ### 5.7 Organize groups
 
@@ -405,9 +405,9 @@ The vault path for every command except `init` resolves as `--vault` → `$PICKM
 pickmem init <path> [--bare] [--force]         # create a vault; applies the starter taxonomy unless --bare
 pickmem web [--port 4577] [--host 127.0.0.1] [--no-open]   # launch the web app
 
-pickmem add --label "…" [--group …] [--type fact|idea|thought|reference] [--tags a,b]
+pickmem add --label "…" [--group …] [--tags idea,money]
             [--body "…" | --file <path|-> | (stdin) | ($EDITOR)] [--inbox]
-pickmem list [--group <prefix>] [--type <kind>] [--pending] [--all]     # alias: ls
+pickmem list [--group <prefix>] [--pending] [--all]                     # alias: ls
 pickmem show <id-or-suffix> [--raw]
 pickmem edit <id-or-suffix>                    # opens $EDITOR
 pickmem rm <id-or-suffix> --yes
