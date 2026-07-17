@@ -14,7 +14,9 @@
 #   PICKMEM_INSTALL_DIR    binary target dir (default: /usr/local/bin if
 #                          writable, else ~/.local/bin)
 #   PICKMEM_EXTENSION_DIR  where to unpack the Chrome extension
-#                          (default: ~/.local/share/pickmem/extension)
+#                          (default: ~/pickmem-extension). Kept visible on
+#                          purpose: you have to browse to it in Chrome's
+#                          "Load unpacked" picker, so a hidden dir just hides it.
 #   PICKMEM_NO_EXTENSION   set to 1 to skip the Chrome extension entirely
 #
 # POSIX sh on purpose — works under dash/ash so `curl | sh` behaves the
@@ -122,7 +124,7 @@ esac
 # path never changes across upgrades, so re-running this script just refreshes
 # the files in place — reload the extension in chrome://extensions afterward.
 
-EXT_DIR="${PICKMEM_EXTENSION_DIR:-$HOME/.local/share/pickmem/extension}"
+EXT_DIR="${PICKMEM_EXTENSION_DIR:-$HOME/pickmem-extension}"
 
 if [ "${PICKMEM_NO_EXTENSION:-}" = "1" ]; then
   say ""
