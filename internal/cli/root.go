@@ -29,6 +29,7 @@ func NewRoot() *cobra.Command {
 		newEditCmd(),
 		newRmCmd(),
 		newPickCmd(),
+		newWebCmd(),
 		newStatusCmd(),
 		newContextCmd(),
 		newLensCmd(),

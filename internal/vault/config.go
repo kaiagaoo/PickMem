@@ -15,6 +15,10 @@ type Config struct {
 	// TemplateName records which starter template `init` used. Purely for
 	// diagnostics; PickMem never reads it back to make decisions.
 	TemplateName string `json:"template_name,omitempty"`
+	// VaultName is an optional human label for the vault, shown in the web
+	// UI header and Settings. Cosmetic only — the vault is identified by its
+	// path, never by this name.
+	VaultName string `json:"vault_name,omitempty"`
 	// Version is a schema version for the on-disk contract. Bump on
 	// breaking layout changes so future migrations can detect old vaults.
 	Version int `json:"version"`

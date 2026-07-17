@@ -72,6 +72,18 @@ func (s *Store) KnownGroups() []string {
 	return sortedKeys(set)
 }
 
+// EnsureGroup creates an empty group folder so a group can exist before it
+// holds any note (onboarding seeds groups this way). The path is sanitized
+// to stay inside the vault and out of the managed pickmem/ dir. A no-op if
+// the folder already exists.
+func (s *Store) EnsureGroup(group string) error {
+	clean, err := cleanGroup(group)
+	if err != nil {
+		return err
+	}
+	return os.MkdirAll(filepath.Join(s.Root, filepath.FromSlash(clean)), 0o755)
+}
+
 func isExcludedTaxonomyDir(name string) bool {
 	return strings.HasPrefix(name, ".") ||
 		strings.HasPrefix(name, "_") ||

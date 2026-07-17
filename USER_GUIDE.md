@@ -301,7 +301,7 @@ With no selection it's `--- pickmem: no memory selected ---`.
 Two client-side settings make this reliable. Neither adds anything beyond what you picked — they just remove friction:
 
 1. **Tool permissions → Always allow.** Settings → Connectors → pickmem → Tool access. Set all four tools to *Always allow* so Claude doesn't stop to confirm each read. (One tool may default to "Ask" on first connect — that's Claude Desktop's own behavior, not a PickMem setting; flip it too.)
-2. **A custom instruction. (Optional)** Settings → Profile → personal preferences, add something like:
+2. **A custom instruction(Recommended).** Settings → Profile → personal preferences, add something like:
    > *Before answering anything that might depend on my personal context or preferences, check my PickMem active memory first (`get_active_memory` or the `pickmem://active` resource). If it's empty or unrelated, say so rather than guessing.*
 
 ---
