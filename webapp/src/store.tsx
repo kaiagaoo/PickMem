@@ -28,7 +28,6 @@ interface Actions {
   setVaultName: (name: string) => Promise<void>;
   importVault: (blob: unknown) => Promise<void>;
   clearVault: () => Promise<void>;
-  exportVault: () => Promise<unknown>;
   switchVault: (path: string) => Promise<void>;
   createVault: (path: string, name: string) => Promise<void>;
   importVaultAsNew: (path: string, name: string, vault: unknown) => Promise<void>;
@@ -110,7 +109,6 @@ export function VaultProvider({
       setVaultName: (name) => run(api.setVaultName(name)),
       importVault: (blob) => run(api.importVault(blob)),
       clearVault: () => run(api.clearVault()),
-      exportVault: () => api.exportVault(),
       switchVault: (path) => run(api.switchVault(path)),
       createVault: (path, name) => run(api.createVault(path, name)),
       importVaultAsNew: (path, name, v) => run(api.importVaultAsNew(path, name, v)),

@@ -4,13 +4,13 @@
 
 ### You pick what your AI remembers.
 
-**A local-first memory layer for LLMs.** Your memory is a folder of Markdown you own — and the default is *nothing*. For each task you choose the slice that reaches the model. No database, no account, no silent injection.
+**A local-first memory layer for LLMs.** Your memory is a folder of Markdown you own — and the default is *nothing*. For each task you open a small local web app, pick the slice that reaches the model, and hand it over. No database, no account, no silent injection.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.26+-00ADD8.svg)](go.mod)
 [![Local-first](https://img.shields.io/badge/local--first-no%20telemetry-2E3440.svg)](#-design-principles)
 [![Release](https://img.shields.io/github/v/release/kaiagaoo/PickMem?color=success&label=release)](https://github.com/kaiagaoo/PickMem/releases/latest)
-[![MCP](https://img.shields.io/badge/MCP-compatible-5A45FF.svg)](#-delivery-channels)
+[![MCP](https://img.shields.io/badge/MCP-compatible-5A45FF.svg)](#-how-it-reaches-a-model)
 
 [**Install**](#-install) · [**Quick start**](#-quick-start) · [**User Guide**](USER_GUIDE.md) · [**How it compares**](#-how-it-compares)
 
@@ -20,29 +20,31 @@
 
 ## 👀 What it looks like
 
-Pick from a tree of your *own* memory — group headers are selectable, so toggling one grabs everything under it:
+`pickmem web` opens a local app in your browser — a calm three-zone workspace over your own vault:
 
 ```
-[ ] about
-    [ ] health
-        [x] chronic anemia, on iron supplements
-    [ ] preferences
-        [x] uses vim; don't suggest vscode
-[ ] finance
-    [ ] income
-        [x] monthly base $8k + quarterly bonus
-
-Active: custom · 3 selected · ~28 tokens
-space toggle · / filter · l lens · s save-lens · enter confirm · q cancel
+┌───────────────┬─────────────────────────────────────┬───────────────────────┐
+│ 📌 My memory ▾│  All memories / finance              │  ACTIVE MEMORY        │
+│               │  ─────────────────────────────────   │  Lens: Advice ▾       │
+│  ▸ about      │  ▸ income   ▸ bills   ▸ goals        │  ● Salary             │
+│  ▾ finance    │                                      │  ● Anemia             │
+│    · income   │  ┌───────────────────────────────┐   │                       │
+│    · bills    │  │ ● Salary                fact  │   │  2 items · ~28 tokens │
+│  ▸ work       │  │   Monthly base $8k + bonus    │   │                       │
+│  ─────────    │  └───────────────────────────────┘   │  text · md · json     │
+│  ✦ Lenses     │                                      │  [ Copy context ]     │
+│  Inbox (0)    │                        [+ Memory]    │  [ Save as lens ]     │
+└───────────────┴─────────────────────────────────────┴───────────────────────┘
+   navigate            browse & pick               the slice the model gets
 ```
 
-Confirm, and *exactly that* is what the model gets — nothing else from your vault:
+Toggle items on the left or in the center; the **Active Memory** tray on the right is *exactly* what the model receives — copy it out, or let a connected assistant read it. Nothing else from your vault goes along:
 
 ```
---- pickmem: selected memory ---
-chronic anemia (about/health): chronic anemia, on iron supplements
+--- pickmem: selected memory (lens: Advice) ---
+Salary (finance/income): monthly base $8k + quarterly bonus
 
-editor preference (about/preferences): uses vim; don't suggest vscode
+Anemia (about/health): chronic anemia, on iron supplements
 --- end pickmem memory ---
 ```
 
@@ -66,25 +68,25 @@ Three things set PickMem apart — everything else is in service of these:
 - **📂 Your memory is plain Markdown you own.** A folder of notes on your disk, Obsidian-native. No database, no account, no lock-in — readable and portable ten years from now.
 - **🔌 One vault, any model.** The same memory reaches Claude, ChatGPT, Gemini, Cursor, and Cline. Switch assistants without leaving your memory behind — something no built-in memory can do.
 
-<sub>Built on top: **Claude can save memories for you** (it extracts and stages; you approve), **capture** any page selection, **lenses** for recurring picks, **note types** (fact / idea / thought / reference), and a **folder-defined taxonomy** with `_private` folders. All local, all reviewed by you.</sub>
+<sub>Built on top: a **local web app** to build and pick memory (folder tree, drill-down browsing, groups you rename/reorganize, multiple vaults you switch between), a **Chrome extension** to insert your pick into any chat box, **lenses** for recurring picks, **note types** (fact / idea / thought / reference), and **Claude can stage memories for you** (it extracts; you approve). All local, all reviewed by you.</sub>
 
 ---
 
 ## 🧠 How it works
 
 ```
-          your memory (Obsidian-compatible Markdown vault)
-                              │
-                    pickmem pick  →  active.json   (the slice you chose)
-                              │
-             ┌────────────────┴─────────────────┐
-             ▼                                   ▼
-     MCP server (stdio)                   Chrome extension
-   Claude Desktop · Cursor · Cline    ChatGPT · Claude.ai · Gemini
-                                        (+ clipboard anywhere)
+              your memory  (a folder of Markdown notes you own)
+                                   │
+        pickmem web  ──▶  you pick a slice  ──▶  pickmem/active.json
+       (local app in                                     │
+        your browser)              ┌─────────────────────┴─────────────────────┐
+                                   ▼                                           ▼
+                          Chrome extension                            MCP server (stdio)
+                     ChatGPT · Claude.ai · Gemini              Claude Desktop · Cursor · Cline
+                        (+ copy anywhere)                       (for assistants / AI agents)
 ```
 
-Both channels read the same `active.json` and produce the same context block, so switching between them never changes what the model sees.
+You curate and pick in the **web app**. That writes one small file (`active.json`). Both delivery channels read it and produce the *same* context block, so what the model sees never depends on which channel you used.
 
 ---
 
@@ -96,7 +98,7 @@ Both channels read the same `active.json` and produce the same context block, so
 curl -fsSL https://raw.githubusercontent.com/kaiagaoo/PickMem/main/install.sh | sh
 ```
 
-Detects your OS/arch, downloads the right binary from the [latest release](https://github.com/kaiagaoo/PickMem/releases/latest), verifies its checksum, and installs to `/usr/local/bin` (or `~/.local/bin` without sudo). Pin a version with `PICKMEM_VERSION=v0.1.1`, change the target with `PICKMEM_INSTALL_DIR=…`.
+Detects your OS/arch, downloads the right binary from the [latest release](https://github.com/kaiagaoo/PickMem/releases/latest), verifies its checksum, and installs to `/usr/local/bin` (or `~/.local/bin` without sudo). The web UI is embedded in the binary — no separate frontend to install.
 
 <sub>Windows: download the `_windows_amd64.zip` asset from the [releases page](https://github.com/kaiagaoo/PickMem/releases/latest) and unzip.</sub>
 
@@ -108,55 +110,46 @@ cd PickMem
 go install ./cmd/pickmem      # → $(go env GOPATH)/bin; make sure it's on PATH
 ```
 
-> The browser extension is separate and needs Node 20+ / Chrome — see [Delivery channels](#-delivery-channels).
+> The Chrome extension is separate and needs Node 20+ / Chrome — see [How it reaches a model](#-how-it-reaches-a-model).
 
 ---
 
 ## ⚡ Quick start
 
 ```bash
-# 1. Create a vault (starter taxonomy + routing rules + one
-#    fill-in-the-blank note per group — the vault starts as a form)
+# 1. Create a vault (a plain folder — this is your only store)
 pickmem init ~/PickMemVault
 
-# 2. Fill in the blanks (in Obsidian or $EDITOR)… 
-pickmem edit <id>       # ids are printed by `pickmem list`
-
-#    …and/or add your own memories
-pickmem add --label "salary" --group finance/income --body "monthly base \$8k + quarterly bonus"
-
-# 3. Pick what this session should see
-pickmem pick
-
-# 4a. Wire it into Claude Desktop, then restart the app
-pickmem install claude-desktop
-
-# 4b. …or use it in the browser
-cd extension && npm install && npm run build
-#     then load extension/dist/ via chrome://extensions → Load unpacked
+# 2. Open the web app and build your memory there
+pickmem web
 ```
 
-**Let Claude fill your memory:** once connected, just say *"remember that I'm allergic to penicillin."* Claude extracts the fact, picks a group from your folders, and stages it to your inbox — then run `pickmem review` and press `A` to accept. Nothing goes live until you say so.
+That's it. The app opens at `http://127.0.0.1:4577`. A brand-new empty vault greets you with a short **setup guide** (pick a few areas, fill in a starter memory or two); a vault with notes drops you straight into the workspace. From there you **add, organize, and pick** — all in the browser. When you want an assistant to use your pick, wire up a [delivery channel](#-how-it-reaches-a-model).
+
+**Let Claude fill your memory:** once the MCP server is connected, just say *"remember that I'm allergic to penicillin."* Claude extracts the fact, picks a group from your folders, and stages it to your **Inbox** — review and accept it in the web app (or `pickmem review`). Nothing goes live until you say so.
 
 Full walkthrough: **[USER_GUIDE.md](USER_GUIDE.md)**.
 
 ---
 
-## 🔌 Delivery channels
+## 🔌 How it reaches a model
 
-**MCP (native clients).** `pickmem serve` is a stdio MCP server. It exposes a `pickmem://active` resource and six tools:
+You pick in the web app; these channels deliver that pick:
 
-| Tool | What it does |
-|------|--------------|
-| `get_active_memory` | Return the slice you picked for this session |
-| `list_lenses` / `use_lens` | List and activate saved selections |
-| `list_groups` | Report your folder taxonomy (so the model classifies into *your* categories; `_`-prefixed folders stay private) |
-| `stage_memories` | Claude stages facts it extracted — pending, never activated |
-| `propose_memories` | Bulk-stage raw text as a fallback |
+**Chrome extension.** For ChatGPT, Claude.ai, and Gemini, with a clipboard fallback everywhere else. Grant your vault folder once (File System Access API), then **Insert** the assembled block into the chat box on a supported site, or **Copy** to paste anywhere.
 
-`pickmem install claude-desktop|cursor` writes the config for you; Cline is a one-line manual setup.
+```bash
+cd extension && npm install && npm run build
+#   then load extension/dist/ via chrome://extensions → Load unpacked
+```
 
-**Chrome extension.** Grant your vault folder once (File System Access API), then: **pick** items in the popup and **Insert** the block into the chat box on supported sites (or **Copy** to paste anywhere); **add** a memory from the popup; or **capture** any page selection into your inbox via the right-click menu / keyboard shortcut. It only ever *creates* notes and writes `active.json` / `lenses.json` — editing existing notes stays in Obsidian or the CLI.
+**MCP server (for assistants / AI agents).** `pickmem serve` is a stdio MCP server that native clients launch. It exposes a `pickmem://active` resource and tools — `get_active_memory`, `list_lenses` / `use_lens`, `list_groups`, and `stage_memories` (Claude extracts facts and stages them to your inbox; nothing activates without your review).
+
+```bash
+pickmem install claude-desktop      # or: cursor   (writes the client config for you)
+```
+
+<sub>The CLI (`pickmem add`, `pick`, `import`, `review`, `context --copy`, …) still does everything headless — handy for scripting and for AI agents driving PickMem programmatically. See the [User Guide](USER_GUIDE.md#13-command-reference).</sub>
 
 ---
 
@@ -164,8 +157,8 @@ Full walkthrough: **[USER_GUIDE.md](USER_GUIDE.md)**.
 
 These are enforced invariants, not aspirations:
 
-- **Local-first, no exceptions.** Your vault stays on disk; PickMem makes no network calls.
-- **Create-only.** PickMem creates notes and moves inbox items into folders. It **never rewrites a note you authored** — it verifies on-disk content before touching any file it owns, and refuses if you changed it.
+- **Local-first, no exceptions.** Your vaults stay on disk; PickMem makes no network calls. The web app is a local server bound to `127.0.0.1`.
+- **Create-only.** PickMem creates notes and moves inbox items into folders. It **never rewrites a note you authored** without a guard — it verifies on-disk content before touching any file it owns, and refuses if you changed it out from under it.
 - **The user decides relevance.** No silent auto-injection. Auto-extraction only ever *proposes* into an inbox; nothing goes live without your review.
 - **Deterministic lookup, not RAG.** A picked item is fetched by id — an exact read, not a similarity guess.
 - **You own the taxonomy.** Your folder tree defines your categories, and you choose which reach the model.
@@ -187,14 +180,16 @@ The single differentiating axis: **system-decides-relevance vs. user-decides-rel
 cmd/pickmem/       CLI entry point (cobra)
 internal/
   vault/           the store: notes, groups, taxonomy, inbox, lenses, active
-  picker/          Bubble Tea TUI (grouped tree picker + inbox review)
+  web/             the web app: HTTP+JSON API over the store + embedded SPA
+  userconf/        machine-level config: current vault + recent-vaults list
   mcp/             MCP server exposing the picked slice + save tools
+  picker/          Bubble Tea TUI (headless picker + inbox review)
   ingest/          import parsers + staging pipeline
   routing/         keyword group-routing rules
   install/         client config writers (Claude Desktop, Cursor)
+webapp/            React + Vite + TypeScript source for the web app
 templates/         starter taxonomy (embedded)
 extension/         MV3 TypeScript Chrome extension
-demo/              VHS tape (pick.tape)
 ```
 
 ## 🛠️ Development
@@ -204,15 +199,20 @@ go test ./...        # Go unit tests
 go vet ./...
 gofmt -l .           # should be empty
 
-cd extension
+cd webapp            # the web app
+npm install
 npm run typecheck
-npm test
-npm run build        # → extension/dist/
+npm run build        # → internal/web/static/ (embedded into the binary)
+
+cd ../extension      # the browser extension
+npm run typecheck && npm test && npm run build   # → extension/dist/
 ```
+
+> After changing `webapp/`, run `npm run build` there **before** `go build` — the SPA is embedded into the binary from `internal/web/static/`.
 
 ## 📈 Status
 
-The CLI, TUI picker, MCP server (with model-driven `stage_memories`), import/review pipeline, and Chrome extension are all working and tested. This is an actively evolving personal project; the vault format — Markdown-with-frontmatter notes plus a few small JSON files — is the stable contract shared between the Go binary and the extension.
+The web app (three-zone workspace, drill-down browsing, group management, multi-vault switching, onboarding), the Chrome extension, the MCP server (with model-driven `stage_memories`), and the CLI + import/review pipeline are all working and tested. This is an actively evolving personal project; the vault format — Markdown-with-frontmatter notes plus a few small JSON files — is the stable contract shared across every surface.
 
 ## 📄 License
 

@@ -65,12 +65,3 @@ export type Nav =
   | { kind: "group"; path: string }
   | { kind: "note"; id: string };
 
-// Portable whole-vault export/import shape (mirrors internal/web/portable.go).
-export interface PortableVault {
-  format_version: number;
-  vault_name?: string;
-  items: unknown[];
-  lenses: unknown[];
-  active_item_ids: string[];
-  active_lens?: string;
-}

@@ -89,27 +89,6 @@ export function Home({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) =
       },
     });
   };
-  const moveNote = (n: Note) => {
-    setPrompt({
-      title: `Move “${n.label}”`,
-      label: "Destination group",
-      defaultValue: n.group,
-      placeholder: "finance/income",
-      confirmLabel: "Move",
-      options: state.groups,
-      validate: (v) => (v === n.group ? "It's already in that group." : null),
-      onSubmit: (to) => {
-        void actions.editNote(n.id, {
-          label: n.label,
-          group: to,
-          body: n.body,
-          type: n.type,
-          tags: n.tags,
-        });
-      },
-    });
-  };
-
   const groupNoteCount = (path: string) =>
     state.notes.filter((n) => n.group === path || n.group.startsWith(path + "/")).length;
 
@@ -117,7 +96,6 @@ export function Home({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) =
     onNavGroup: goGroup,
     onNavNote: goNote,
     onToggleSubtree: actions.toggleGroup,
-    onToggleNote: actions.toggleNote,
     onNewSubgroup: newSubgroup,
     onAddNote: (g) => {
       setView("vault");
@@ -127,7 +105,6 @@ export function Home({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) =
     onDeleteGroup: (p) => setPendingGroupDelete(p),
     onEditNote: (n) => setEditor({ note: n }),
     onDeleteNote: (n) => setPendingDelete(n),
-    onMoveNote: moveNote,
   };
 
   const center = () => {

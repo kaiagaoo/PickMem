@@ -7,14 +7,12 @@ export interface TreeHandlers {
   onNavGroup: (path: string) => void;
   onNavNote: (id: string) => void;
   onToggleSubtree: (ids: string[], select: boolean) => void;
-  onToggleNote: (id: string) => void;
   onNewSubgroup: (parent: string) => void;
   onAddNote: (group: string) => void;
   onRenameGroup: (path: string) => void;
   onDeleteGroup: (path: string) => void;
   onEditNote: (n: Note) => void;
   onDeleteNote: (n: Note) => void;
-  onMoveNote: (n: Note) => void;
 }
 
 interface Props extends TreeHandlers {

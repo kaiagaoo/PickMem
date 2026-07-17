@@ -89,30 +89,16 @@ func (s *Server) handleSetVaultName(w http.ResponseWriter, r *http.Request) {
 	s.writeState(w)
 }
 
-// handleExport returns the whole vault as one portable JSON blob, as a
-// download.
-func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
-	pv, err := exportVault(s.store)
-	if err != nil {
-		writeErr(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	w.Header().Set("Content-Disposition", `attachment; filename="pickmem-vault.json"`)
-	writeJSON(w, http.StatusOK, pv)
-}
-
 // handleImport materializes a portable blob into new notes (merge mode).
 func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 	var pv portableVault
 	if !decode(w, r, &pv) {
 		return
 	}
-	n, err := importVault(s.store, pv)
-	if err != nil {
+	if _, err := importVault(s.store, pv); err != nil {
 		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	_ = n
 	s.writeState(w)
 }
 

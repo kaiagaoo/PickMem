@@ -73,14 +73,6 @@ export const api = {
   importVault: (blob: unknown) =>
     request("/import", { method: "POST", body: JSON.stringify(blob) }),
 
-  // exportVault bypasses request() because it returns a file download, not
-  // the State envelope.
-  exportVault: async (): Promise<unknown> => {
-    const res = await fetch("/api/export");
-    if (!res.ok) throw new Error(`export failed: ${res.status}`);
-    return res.json();
-  },
-
   switchVault: (path: string) =>
     request("/vaults/switch", { method: "POST", body: JSON.stringify({ path }) }),
 

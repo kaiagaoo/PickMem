@@ -2,48 +2,47 @@
 
 *A local-first memory-curation layer for LLMs. You pick what the model remembers.*
 
-PickMem keeps your memory in a plain folder of Markdown files (an Obsidian vault) on your own disk. For any given task, **you** select which memory items reach the model — nothing is sent automatically. This guide is written to match exactly how the tool behaves; follow it top to bottom the first time.
+PickMem keeps your memory in a plain folder of Markdown files (an Obsidian-compatible vault) on your own disk. For any given task, **you** select which memory items reach the model — nothing is sent automatically. You do that curating and picking in a small **local web app**; two channels then deliver your pick to a model.
 
 ---
 
 ## Table of contents
 
-- [PickMem — User Guide](#pickmem--user-guide)
-  - [Table of contents](#table-of-contents)
-  - [1. What is PickMem?](#1-what-is-pickmem)
-  - [2. Prerequisites](#2-prerequisites)
-  - [3. Install the CLI](#3-install-the-cli)
-  - [4. Create your first vault](#4-create-your-first-vault)
-  - [5. Add memories](#5-add-memories)
-    - [Inspecting](#inspecting)
-    - [Editing / deleting](#editing--deleting)
-  - [6. Pick what the model sees](#6-pick-what-the-model-sees)
-  - [7. Use PickMem with Claude Desktop (MCP)](#7-use-pickmem-with-claude-desktop-mcp)
-    - [Recommended Claude Desktop settings](#recommended-claude-desktop-settings)
-  - [8. Use PickMem in the browser (extension)](#8-use-pickmem-in-the-browser-extension)
-    - [Build and load](#build-and-load)
-    - [Connect your vault](#connect-your-vault)
-    - [Pick and deliver](#pick-and-deliver)
-    - [Add a memory from the popup](#add-a-memory-from-the-popup)
-  - [9. Import a batch of memories](#9-import-a-batch-of-memories)
-    - [Undoing an import](#undoing-an-import)
-  - [10. Review the inbox](#10-review-the-inbox)
-  - [11. Lenses](#11-lenses)
-  - [12. Editing and organizing in Obsidian](#12-editing-and-organizing-in-obsidian)
-  - [13. Command reference](#13-command-reference)
-  - [14. Troubleshooting](#14-troubleshooting)
+- [1. What is PickMem?](#1-what-is-pickmem)
+- [2. Prerequisites](#2-prerequisites)
+- [3. Install](#3-install)
+- [4. Create your first vault](#4-create-your-first-vault)
+- [5. The web app](#5-the-web-app)
+  - [5.1 Launch it](#51-launch-it)
+  - [5.2 First-run setup](#52-first-run-setup)
+  - [5.3 The three zones](#53-the-three-zones)
+  - [5.4 Browse & navigate](#54-browse--navigate)
+  - [5.5 Pick what the model sees](#55-pick-what-the-model-sees)
+  - [5.6 Add, edit, and open notes](#56-add-edit-and-open-notes)
+  - [5.7 Organize groups](#57-organize-groups)
+  - [5.8 Lenses](#58-lenses)
+  - [5.9 The inbox](#59-the-inbox)
+  - [5.10 Switch and manage vaults](#510-switch-and-manage-vaults)
+  - [5.11 Settings](#511-settings)
+- [6. Use PickMem in the browser (extension)](#6-use-pickmem-in-the-browser-extension)
+- [7. Connect an assistant (MCP)](#7-connect-an-assistant-mcp)
+- [8. Let Claude save memories for you](#8-let-claude-save-memories-for-you)
+- [9. Import a batch of memories](#9-import-a-batch-of-memories)
+- [10. Editing and organizing in Obsidian](#10-editing-and-organizing-in-obsidian)
+- [11. CLI reference (scripting & agents)](#11-cli-reference-scripting--agents)
+- [12. Troubleshooting](#12-troubleshooting)
 
 ---
 
 ## 1. What is PickMem?
 
-PickMem inverts how assistant "memory" usually works. Instead of the system silently deciding what past context to inject, **the default is nothing, and you add context on purpose.** Think of it as a replacement for built-in auto-memory: switch the assistant's own memory off, and the model is personalized only by the items you deliberately pick for that session — never by stored context behind scenes.
+PickMem inverts how assistant "memory" usually works. Instead of the system silently deciding what past context to inject, **the default is nothing, and you add context on purpose.** Switch the assistant's own memory off, and the model is personalized only by the items you deliberately pick for that session — never by stored context behind the scenes.
 
 - Your memories live in a folder of Markdown notes. Each note is one memory item.
-- You run a picker, select the items relevant to your current task, and confirm. That selection is written to a small file (`pickmem/active.json`).
+- You open the **web app**, browse your vault, and toggle the items relevant to your current task. That selection is written to a small file (`pickmem/active.json`).
 - Two channels deliver *only that selection* to a model:
-  - **MCP** — a local server (`pickmem serve`) that Claude Desktop, Cursor, and Cline connect to.
-  - **Chrome extension** — reads the same vault and injects your selection into the chat box on ChatGPT, Claude.ai, or Gemini. A **Copy** button works on any other site.
+  - **Chrome extension** — injects your selection into the chat box on ChatGPT, Claude.ai, or Gemini (and a **Copy** button works anywhere).
+  - **MCP** — a local server (`pickmem serve`) that assistants and AI agents (Claude Desktop, Cursor, Cline) connect to.
 
 Both channels read the same vault and produce the same context block, so switching between them doesn't change what the model sees.
 
@@ -52,38 +51,31 @@ Both channels read the same vault and produce the same context block, so switchi
 ## 2. Prerequisites
 
 - **macOS, Linux, or Windows.** Commands below use macOS paths; the equivalents work on other platforms.
-- **Go 1.26 or newer** — the CLI is written in Go. Check with `go version`; install from [go.dev/dl](https://go.dev/dl) or `brew install go`.
-- **Obsidian** (optional but recommended) — for browsing/editing the vault visually. PickMem works without it; the vault is just files.
-- **Node.js 20+ and npm** — only if you want the Chrome extension.
-- **Chrome or another Chromium browser** — only for the extension.
+- **A modern browser** — the web app runs in Chrome, Safari, Firefox, or Edge.
+- **Go 1.26+** — only if you build from source (`go version`; install from [go.dev/dl](https://go.dev/dl) or `brew install go`). The one-liner installer needs no Go.
+- **Obsidian** (optional) — for browsing/editing the vault visually. PickMem works without it; the vault is just files.
+- **Node.js 20+ and Chrome** — only if you want the Chrome extension.
 
 You do **not** need Docker, an account, an API key, or a network connection — everything runs locally.
 
 ---
 
-## 3. Install the CLI
+## 3. Install
 
-**Easiest — the install script** (macOS/Linux; no Go needed). Downloads the right prebuilt binary from the latest release, verifies its checksum, and installs it:
+**Easiest — the install script** (macOS/Linux; no Go needed). Downloads the right prebuilt binary from the latest release, verifies its checksum, and installs it. The web UI is embedded in the binary:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kaiagaoo/PickMem/main/install.sh | sh
 ```
 
-It installs to `/usr/local/bin` if writable, else `~/.local/bin`. Env overrides: `PICKMEM_VERSION=v0.1.1` to pin, `PICKMEM_INSTALL_DIR=…` for a custom target. Windows: grab the `.zip` from the [releases page](https://github.com/kaiagaoo/PickMem/releases/latest).
+It installs to `/usr/local/bin` if writable, else `~/.local/bin`. Overrides: `PICKMEM_VERSION=v0.1.1` to pin, `PICKMEM_INSTALL_DIR=…` for a custom target. Windows: grab the `.zip` from the [releases page](https://github.com/kaiagaoo/PickMem/releases/latest).
 
 **Or build from source** (needs Go 1.26+):
 
 ```bash
 git clone https://github.com/kaiagaoo/PickMem.git
 cd PickMem
-go build -o pickmem ./cmd/pickmem
-```
-
-Put the binary on your PATH:
-
-```bash
-go install ./cmd/pickmem      # installs to $(go env GOPATH)/bin — make sure that's on PATH
-# or copy it:  cp pickmem /usr/local/bin/
+go install ./cmd/pickmem      # → $(go env GOPATH)/bin — make sure that's on PATH
 ```
 
 Verify:
@@ -92,9 +84,7 @@ Verify:
 pickmem --help
 ```
 
-You should see these subcommands: `init`, `add`, `list`, `show`, `edit`, `rm`, `pick`, `status`, `context`, `lens`, `inbox`, `serve`, `install`, `uninstall`, `import`, `review`.
-
-> **macOS note:** if you rebuild often and the binary ever hangs on launch with no output, macOS Gatekeeper may have flagged it. Rebuild it yourself directly (`go build -o /usr/local/bin/pickmem ./cmd/pickmem`) rather than through another tool, and confirm with `spctl -a -vv /usr/local/bin/pickmem`.
+> **macOS note:** if a freshly built binary ever hangs on launch with no output, macOS Gatekeeper may have flagged it. Rebuild it directly (`go build -o /usr/local/bin/pickmem ./cmd/pickmem`) and confirm with `spctl -a -vv /usr/local/bin/pickmem`.
 
 ---
 
@@ -106,16 +96,7 @@ A **vault** is just a folder. PickMem uses it as its only store — there is no 
 pickmem init ~/PickMemVault
 ```
 
-By default `init` lays down a **starter taxonomy**: a tree of group folders, a `pickmem/config.json` seeded with keyword→group routing rules, and a `README.md` at the vault root describing every group. (PickMem ignores that README — it has no frontmatter — so it's just a map for you.)
-
-It also seeds **one fill-in-the-blank note per group** (tagged `starter`), so the vault starts as a form to complete instead of an empty tree:
-
-```
-Monthly income: ____
-Other sources: ____
-```
-
-Open them in Obsidian or with `pickmem edit <id>` and replace the `____` blanks; delete the ones you don't care about with `pickmem rm <id> --yes`. Unfilled blanks are harmless — you just won't pick those notes. Re-running `init --force` restores missing skeletons but **never duplicates or overwrites a note you've been filling in** (it skips any group+label that already exists).
+By default `init` lays down a **starter taxonomy**: a tree of group folders, a `pickmem/config.json` with keyword→group routing rules, a root `README.md` describing every group, and **one fill-in-the-blank note per group** (tagged `starter`) so the vault reads as a form to complete rather than an empty tree.
 
 The starter groups nest by life area:
 
@@ -132,185 +113,156 @@ The starter groups nest by life area:
 Other useful forms:
 
 ```bash
-pickmem init ~/PickMemVault --bare     # empty vault, no taxonomy
-pickmem init ~/PickMemVault --force    # re-apply the starter taxonomy to an existing vault
+pickmem init ~/PickMemVault --bare     # empty vault, no taxonomy (the web app's setup guide will greet you)
+pickmem init ~/PickMemVault --force    # re-apply the starter taxonomy to an existing vault (never overwrites your notes)
 ```
 
 You can point `init` at a subfolder of an existing Obsidian vault (`pickmem init ~/ObsidianVault/memory`) or at the vault root — PickMem only creates and manages files it owns and never touches your other notes.
 
-**After `init`, the vault path is remembered** in `~/.config/pickmem/config.json` (or `$XDG_CONFIG_HOME/pickmem/config.json`), so later commands don't need `--vault`. The resolution order for every command except `init` is:
-
-1. `--vault <path>` flag
-2. `$PICKMEM_VAULT` environment variable
-3. the recorded user config
+**After `init`, the vault path is remembered** in `~/.config/pickmem/config.json` (or `$XDG_CONFIG_HOME/pickmem/config.json`), so later commands don't need `--vault`. You can also create and switch vaults from inside the web app (§5.10). The resolution order for every command except `init` is: `--vault` → `$PICKMEM_VAULT` → recorded user config.
 
 ---
 
-## 5. Add memories
+## 5. The web app
 
-The one-at-a-time command is `pickmem add`. `--label` is always required; `--group` is required unless you're staging to the inbox.
+The web app is where you live day-to-day: build memory, organize it, and pick.
 
-```bash
-# inline body
-pickmem add --label "salary" --group finance/income --body "monthly base \$8k plus quarterly bonus"
-
-# with tags
-pickmem add --label "editor preference" --group about/preferences --tags tools,strong \
-  --body "I use vim. Don't suggest vscode extensions for vim problems."
-
-# body piped from stdin
-echo "chronic anemia, on iron supplements" | pickmem add --label "anemia" --group about/health
-
-# body from a file
-pickmem add --label "kickoff notes" --group work/projects --file notes.txt
-
-# no body source given + a terminal → opens $EDITOR
-pickmem add --label "meeting notes" --group work/projects
-```
-
-Body source precedence: `--body`, then `--file` (`-` means stdin), then piped stdin, then `$EDITOR`.
-
-Groups nest with `/` (e.g. `work/projects`). `pickmem add` generates the note's stable id for you — this is why you normally add through the CLI rather than hand-creating files (see §12).
-
-**Note types.** A note isn't only "a fact about me." Pass `--type` to say what kind it is — `fact` (default), `idea`, `thought`, or `reference` — so you can later pick "my *ideas* about this project" separately from stable facts. The type is independent of the group (where it lives): `pickmem add -l "solo sail" -g projects -t idea -b "try a solo overnight sail"`. The default `fact` is left off disk, so plain memories stay clean; `pickmem list --type idea` filters by kind, and typing a kind name in the picker's filter narrows to it.
-
-**Stage to the inbox instead of adding directly** with `--inbox`; the `--group` you pass becomes a *suggested* group the note carries until you accept it in review (§10):
+### 5.1 Launch it
 
 ```bash
-echo "solar quotes to compare" | pickmem add --label "solar research" --group home --inbox
+pickmem web
 ```
 
-### Inspecting
+This starts a local server (bound to `127.0.0.1`, no network access) and opens your browser at `http://127.0.0.1:4577`. It uses the vault the CLI resolves (`--vault` → `$PICKMEM_VAULT` → recorded config) and records it as the current + recent vault.
 
-```bash
-pickmem list                     # active notes, grouped
-pickmem list --pending           # only inbox (pending) notes
-pickmem list --all               # active + pending
-pickmem list --group finance     # only groups matching this prefix
-pickmem show <id-or-suffix>      # print one note (accepts the last 3+ chars of the id)
-pickmem show <id-or-suffix> --raw   # print the raw file, frontmatter included
+| Flag | Default | Meaning |
+|------|---------|---------|
+| `--port` | `4577` | Port to listen on |
+| `--host` | `127.0.0.1` | Interface to bind (localhost only by default) |
+| `--no-open` | off | Don't open a browser automatically (just print the URL) |
+| `--vault <path>` | — | Open a specific vault instead of the recorded one |
+
+Leave the terminal running; press **Ctrl-C** to stop. The app reloads the vault from disk on every action, so edits you make in Obsidian or the CLI show up on the next click.
+
+### 5.2 First-run setup
+
+Open an **empty** vault (say, one made with `init --bare`, or a brand-new folder) and the app greets you with a short **setup guide**:
+
+1. **Choose areas** — pick the life areas your memory should help with (About you, Work, Preferences, Money, Health, People, Learning). Each becomes a group.
+2. **Fill in memories** — each area shows a few suggested memories with a guiding question. Type an answer, tap **use example** to prefill one, or **fill all with examples** for a whole area. Skip anything that doesn't fit.
+3. **Review & create** — the memories you filled start out **picked**, saved as a lens called **Starter**, and you land in the workspace.
+
+The setup guide is entirely optional — **Skip for now** leaves you with just the groups you chose and a friendly empty state. It only appears for a genuinely empty vault; a vault that already has notes drops you straight into the workspace. (Choose **"I already have a vault"** on the welcome screen to import a PickMem vault export instead.)
+
+### 5.3 The three zones
+
+```
+┌───────────────┬─────────────────────────────────────┬───────────────────────┐
+│  navigate     │           browse & pick             │    active memory      │
+│  (left)       │           (center)                  │    (right)            │
+└───────────────┴─────────────────────────────────────┴───────────────────────┘
 ```
 
-### Editing / deleting
+- **Left — navigate.** The vault switcher (top), your **folder tree** (groups, collapsible), your **lenses**, the **Inbox** (with a count), **Settings**, and an inert **✨ Suggestions** entry for the future AI feature.
+- **Center — browse & pick.** A drill-down view of wherever you are: a breadcrumb, the current group's subgroups (as folders you open) and its notes (as cards). Clicking a note opens its detail.
+- **Right — active memory.** The current pick: a live list of what you selected, a rough token estimate, **Copy context**, **Save as lens**, and **Clear pick**. This tray is *exactly* what a model receives.
 
-```bash
-pickmem edit <id-or-suffix>      # opens the note in $EDITOR ($VISUAL, then vi as fallbacks)
-pickmem rm <id-or-suffix> --yes  # delete (the --yes is required)
-```
+### 5.4 Browse & navigate
 
-`pickmem edit` launches your editor on the file (`$VISUAL`, then `$EDITOR`, then `vi`) — PickMem doesn't rewrite the bytes itself. Deleting also removes the note's id from any lens or the active selection that referenced it.
+The left **tree** is your folder map — groups only, nested, collapsible. Click a group name to open it in the center; click the caret to expand/collapse.
+
+The **center** shows one group at a time (drill-down):
+
+- A **breadcrumb** (`All memories / finance / income`) — click any segment to jump up.
+- The group's **subgroups** as folder cards — click one to go deeper.
+- The group's **notes** as cards.
+
+This keeps the center focused even for a large vault; the full structure stays browsable in the left tree.
+
+### 5.5 Pick what the model sees
+
+Picking is the point of PickMem, and it's one click:
+
+- **A note** — click its card (or the circular toggle). Picked cards turn the accent color; they appear instantly in the Active Memory tray.
+- **A whole group** — use the checkbox next to any group, in the left tree or on a folder card. It's tri-state (none / some / all) and toggles every note in that group and its subgroups.
+- **Everything shown** — the "Pick all / Clear" controls above a group's notes toggle just the notes in view.
+
+The **Active Memory** tray on the right shows the running selection, an item count, and a **~token estimate** so you feel the size of what you're handing over. When you're ready:
+
+- **Copy context** — assembles your pick into clean text and copies it. A **text / markdown / json** toggle picks the format. This is the universal delivery path — paste it into any chat, no extension needed. (The plain-text form is byte-identical to what the MCP server and extension produce.)
+- With nothing picked, the block reads `--- pickmem: no memory selected ---` — the "default is nothing" state.
+
+### 5.6 Add, edit, and open notes
+
+**Add** — click **+ Memory** (in a group's header, so it's pre-filed there) or use **Add memory here** from a group's ⋯ menu. The editor has a **label**, the **memory** text, a **type** (fact / idea / thought / reference), a **group** (type a new `a/b` path or pick an existing one), optional **tags**, and a **live preview** of the finished card. Save routes the note to **active** by default; a de-emphasized **"Send to inbox instead"** stages it for later review.
+
+**Open** — click a note's **title** to open its detail view: the full body, tags, provenance, and **Edit / Delete** actions, plus a pick toggle.
+
+**Edit** — the **Edit** button (on a card or in the detail view) reopens the editor. Changing the group **moves** the note to the new folder.
+
+**Delete** — removes the note's file (with a confirm). Deleting also drops the note's id from any lens or the active selection that referenced it.
+
+> **Note types.** A note isn't only "a fact about me." The type says what kind it is, so you can later pick "my *ideas* about this project" separately from stable facts. `fact` is the default and is left off disk, so plain memories stay byte-clean.
+
+### 5.7 Organize groups
+
+Your **taxonomy is your folder tree**, and you shape it right in the app. Every group — in the left tree or the center header — has a **⋯ menu**:
+
+- **New subgroup…** — create a nested group (e.g. `work/client-acme`).
+- **Add memory here** — open the editor pre-filed to this group.
+- **Rename group…** — moves the group and *every note and subgroup under it* to the new path, updating each note's `group` and its routing rules.
+- **Delete group…** — deletes the folder and all notes under it (a typed-`DELETE` confirm when it isn't empty).
+
+The **+ group** button (top of the tree) and **+ Subgroup** (center header) create groups too. All of this happens in-app with a small dialog — no terminal needed.
+
+### 5.8 Lenses
+
+A **lens** is a named, saved selection — for a recurring task you don't want to re-pick every time (`Advice`, `Job-Hunt`, `Client-Acme`).
+
+- **Save** — pick some items, then type a name in the tray's **save pick as lens…** field.
+- **Activate** — click a lens in the left sidebar; it replaces the current pick. The tray's lens dropdown switches between lenses too.
+- **Unsaved changes** — if you toggle items after activating a lens, the tray offers **Update lens** or **Save as new**.
+- **Manage** — the sidebar's **Lenses → manage** opens a screen to activate, **edit membership** (jumps you to the pick), **rename**, **duplicate**, or **delete** each lens.
+
+Lenses live in `pickmem/lenses.json`, so they travel with your vault.
+
+### 5.9 The inbox
+
+The **Inbox** (left sidebar, with a count badge) holds **pending** items — memories staged for review rather than added directly. This is where captured pages, imports, and memories an assistant stages for you land (§8). For each item you can:
+
+- **file into** a group and **Accept** — files the note into that folder and makes it active,
+- **Edit** first, or
+- **Discard** it.
+
+Nothing in the inbox is ever active until you accept it — the same guarantee as `pickmem review` on the CLI.
+
+### 5.10 Switch and manage vaults
+
+You can keep several vaults (work, personal, a shared project) and move between them. The **vault switcher** at the top-left shows the current vault and drops down:
+
+- **Recent vaults** — click one to switch. The pick, tree, and everything else reload for that vault.
+- **Open a folder…** — open an existing folder as a vault by pasting its path (e.g. `~/vaults/work`).
+- **Create new vault…** — make a fresh, empty vault at a path and switch to it.
+- **Import a vault…** — create a new vault from a PickMem vault export (a `pickmem-vault.json`) and switch to it.
+
+All vaults are plain folders on your machine; paths are resolved on the computer running `pickmem web`. Switching also sets that vault as your CLI default, so the two surfaces stay in sync.
+
+### 5.11 Settings
+
+The **Settings** screen (left sidebar) has:
+
+- **Vault** — a display name for the vault and its on-disk path.
+- **Appearance** — System / Light / Dark theme.
+- **AI extraction** — a preview of the upcoming suggestion feature (see §8 for what already works today via MCP).
+- **Danger zone → Clear vault** — deletes every PickMem note and lens in the current vault (a typed-`DELETE` confirm). Your non-PickMem Obsidian notes are untouched.
 
 ---
 
-## 6. Pick what the model sees
+## 6. Use PickMem in the browser (extension)
 
-```bash
-pickmem pick
-```
+The extension inserts your pick directly into the chat box on ChatGPT, Claude.ai, and Gemini, with a clipboard fallback everywhere else. It reads the same vault as the web app.
 
-This opens a full-screen picker showing your active notes as a **tree**: group headers nest by path, with notes indented underneath.
-
-```
-[ ] about
-    [ ] health
-        [ ] chronic anemia
-    [ ] preferences
-        [ ] editor preference
-[ ] finance
-    [ ] income
-        [ ] salary
-```
-
-Every row — including group headers — has a checkbox.
-
-| Key | Action |
-|-----|--------|
-| `↑`/`k`, `↓`/`j` | Move the cursor (lands on headers and notes) |
-| `space` | Toggle the row at the cursor. On a **note**, toggles that note. On a **group header**, selects every note in that group's subtree — or clears them all if they're already all selected. |
-| `/` | Filter — matches note label + body + tags (fuzzy); ancestor group headers stay visible when a nested note matches |
-| `l` | Lens overlay (opens only if you have saved lenses) |
-| `s` | Save the current selection as a new lens (prompts for a name) |
-| `enter` | Confirm — writes `pickmem/active.json` and exits |
-| `q` / `esc` | Cancel — `active.json` is left unchanged |
-
-Group-header checkboxes are tri-state: `[ ]` none of its notes selected, `[~]` some, `[x]` all.
-
-The footer shows `Active: <lens|custom|none> · N selected · ~T tokens` (a rough token estimate over the selected bodies).
-
-**Confirming with nothing selected clears `active.json`** — this is intentional; it matches the "default is nothing" rule and is how you reset. If you didn't mean to, press `q` to cancel instead.
-
-Only **active** notes appear in the picker. Pending inbox items must be accepted in `pickmem review` (§10) first.
-
-**Checking what's active without opening the picker:**
-
-```bash
-pickmem status           # vault, note counts, current selection, ~tokens
-pickmem context          # print the exact block the model receives
-pickmem context --copy   # …or copy it, to paste into any chat UI
-```
-
-`pickmem context --copy` is a delivery channel of its own: it assembles the same block the MCP server and extension produce, so you can paste your picked memory into any site — no extension needed.
-
----
-
-## 7. Use PickMem with Claude Desktop (MCP)
-
-Install the MCP server entry into a client's config (non-destructive — it merges, preserving other servers):
-
-```bash
-pickmem install claude-desktop            # ~/Library/Application Support/Claude/claude_desktop_config.json (macOS)
-pickmem install claude-desktop --dry-run  # preview the entry without writing
-pickmem install cursor                    # ~/.cursor/mcp.json
-pickmem uninstall claude-desktop          # remove the entry
-```
-
-Supported clients for `install`: **`claude-desktop`** and **`cursor`**. For **Cline**, add it by hand in Cline's MCP settings — command: your `pickmem` binary, args: `serve`.
-
-Then fully quit and reopen the client. The server it launches is `pickmem serve` (stdio).
-
-**What the server exposes:**
-
-| Resource / Tool | Purpose |
-|-----------------|---------|
-| resource `pickmem://active` | The assembled context block for your current pick |
-| `get_active_memory` | Returns the same block via a tool call |
-| `list_lenses` | Lists your saved lenses (`name`, item count) |
-| `use_lens(name)` | Activates a lens — rewrites `active.json` and returns the new block |
-| `list_groups` | Lists your vault's groups — **your folder tree** (plus note groups + routing-rule targets) — so the model classifies into your real, self-defined taxonomy. Folders prefixed with `_` are private and never sent. |
-| `stage_memories(items)` | **The main save path.** Claude extracts the memory-worthy facts itself — one label + body + `suggested_group` per item — and stages them to the inbox as **pending**. Invalid groups are rejected (staging can't invent taxonomy), duplicates of existing vault content are skipped. Never activates; `pickmem review` is still the gate. |
-| `propose_memories(chat_text)` | Fallback bulk-stage for raw text: splits on paragraphs, rules-based only. Prefer `stage_memories`. |
-
-With `stage_memories`, saving stops being manual sentence-picking: say *"remember that"* or just share something durable, and (steered by the server's instructions) Claude extracts each fact, picks a group from your existing taxonomy, and stages everything to the inbox. Your part shrinks to `pickmem review` — press `A` to sweep routed items in.
-
-**Testing it:** run `pickmem pick`, select a few items, confirm. In a new Claude Desktop conversation, ask something that depends on your context. The server reloads the vault on every call, so a fresh pick (or an Obsidian edit) is visible without restarting.
-
-**The assembled block** looks like this (plain text, same on the extension side):
-
-```
---- pickmem: selected memory ---
-salary (finance/income): monthly base $8k plus quarterly bonus
-
-anemia (about/health): chronic anemia, on iron supplements
---- end pickmem memory ---
-```
-
-With no selection it's `--- pickmem: no memory selected ---`.
-
-### Recommended Claude Desktop settings
-
-Two client-side settings make this reliable. Neither adds anything beyond what you picked — they just remove friction:
-
-1. **Tool permissions → Always allow.** Settings → Connectors → pickmem → Tool access. Set all four tools to *Always allow* so Claude doesn't stop to confirm each read. (One tool may default to "Ask" on first connect — that's Claude Desktop's own behavior, not a PickMem setting; flip it too.)
-2. **A custom instruction(Recommended).** Settings → Profile → personal preferences, add something like:
-   > *Before answering anything that might depend on my personal context or preferences, check my PickMem active memory first (`get_active_memory` or the `pickmem://active` resource). If it's empty or unrelated, say so rather than guessing.*
-
----
-
-## 8. Use PickMem in the browser (extension)
-
-For ChatGPT, Claude.ai, and Gemini, with a clipboard fallback everywhere else.
-
-### Build and load
+**Build and load:**
 
 ```bash
 cd extension/
@@ -320,151 +272,138 @@ npm run build          # writes extension/dist/
 
 In Chrome: open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select `extension/dist/`.
 
-### Connect your vault
+**Connect your vault.** Click the PickMem toolbar icon. First run shows **"Choose vault folder…"** — grant access to the same folder you `init`-ed (via the browser's File System Access API). Chrome remembers the grant. The popup shows the vault name with a **switch** button and an **inbox N** badge when captures are waiting.
 
-Click the PickMem toolbar icon. First run shows **"Choose vault folder…"** — click it and grant access to the same folder you `init`-ed (via the browser's File System Access API). Chrome remembers the grant across sessions.
+**Pick and deliver.** The popup shows your groups and notes as a **tree with group checkboxes** (tri-state, click a group to select its subtree). Saved lenses appear as chips; the bottom field saves the current selection as a new lens.
 
-Once connected, the popup shows the vault's folder name with a **switch** button to point at a different vault, and an **inbox N** badge in the header whenever captures are waiting (accept them with `pickmem review`).
+- **Insert** — on ChatGPT / Claude.ai / Gemini, prepends the assembled block into the chat input (your draft is preserved).
+- **Copy** — puts the block on your clipboard. Works on **any** site, and even with no vault connected.
 
-### Pick and deliver
+**Add a memory** with **+ Add memory** (label, group, optional tags, text) — same result as adding in the web app, and it selects the new note for you.
 
-The popup shows your groups and notes as the same **tree with group checkboxes** as the TUI (click a group to select its whole subtree; tri-state `[ ]`/`[~]`/`[x]`). Saved lenses appear as chips at the top; the bottom field saves the current selection as a new lens.
+The extension only ever **creates** notes and writes `active.json` / `lenses.json`. Editing existing notes stays in the web app, Obsidian, or the CLI. If a site changes its markup and the input can't be found, the popup says so and **Copy** still works.
 
-- **Insert** — on ChatGPT / Claude.ai / Gemini, prepends the assembled block into the chat's input box (your existing draft is preserved). The header shows the detected site and whether the input was found.
-- **Copy** — puts the assembled block on your clipboard. Works on **any** site, and even with no vault connected.
+---
 
-### Add a memory from the popup
+## 7. Connect an assistant (MCP)
 
-Click **+ Add memory** to open a small form: a **label** (short title), a **group** (type a new path or pick an existing one from the dropdown), optional **tags**, and the **memory text**. Saving writes a new active note into that group folder — the same result as `pickmem add` — and selects it for you. The new note appears immediately in the tree above.
+MCP is how assistants and AI agents read your pick. Install the server entry into a client's config (non-destructive — it merges, preserving other servers):
 
-The extension only ever **creates** notes (and writes `pickmem/active.json` / `pickmem/lenses.json`). It never rewrites an existing note — editing stays in Obsidian or the CLI, which hold the safeguard that prevents clobbering a note you changed elsewhere.
+```bash
+pickmem install claude-desktop            # ~/Library/Application Support/Claude/claude_desktop_config.json (macOS)
+pickmem install claude-desktop --dry-run  # preview the entry without writing
+pickmem install cursor                    # ~/.cursor/mcp.json
+pickmem uninstall claude-desktop          # remove the entry
+```
 
-If a site changes its markup and the input can't be found, the popup says so and **Copy** still works.
+Supported for `install`: **`claude-desktop`** and **`cursor`**. For **Cline**, add it by hand — command: your `pickmem` binary, args: `serve`. Then fully quit and reopen the client. The server it launches is `pickmem serve` (stdio).
+
+**What the server exposes:**
+
+| Resource / Tool | Purpose |
+|-----------------|---------|
+| resource `pickmem://active` | The assembled context block for your current pick |
+| `get_active_memory` | Returns the same block via a tool call |
+| `list_lenses` | Lists your saved lenses (`name`, item count) |
+| `use_lens(name)` | Activates a lens — rewrites `active.json` and returns the new block |
+| `list_groups` | Lists your vault's groups (your folder tree + note groups + routing targets) so the model classifies into your real taxonomy. Folders prefixed with `_` are private and never sent. |
+| `stage_memories(items)` | **The main save path.** Claude extracts memory-worthy facts itself — label + body + `suggested_group` per item — and stages them to the inbox as **pending**. Never activates; you review (§8). |
+| `propose_memories(chat_text)` | Fallback bulk-stage for raw text. Prefer `stage_memories`. |
+
+**Recommended Claude Desktop settings.** Two client-side settings remove friction (neither adds anything beyond what you picked):
+
+1. **Tool permissions → Always allow.** Settings → Connectors → pickmem → Tool access: set the tools to *Always allow* so Claude doesn't stop to confirm each read.
+2. **A custom instruction.** Settings → Profile → personal preferences:
+   > *Before answering anything that might depend on my personal context or preferences, check my PickMem active memory first (`get_active_memory` or the `pickmem://active` resource). If it's empty or unrelated, say so rather than guessing.*
+
+**Testing it.** Pick a few items in the web app, then in a new conversation ask something that depends on your context. The server reloads the vault on every call, so a fresh pick (or an Obsidian edit) is visible without restarting.
+
+The assembled block looks like this (same on every channel):
+
+```
+--- pickmem: selected memory ---
+salary (finance/income): monthly base $8k plus quarterly bonus
+
+anemia (about/health): chronic anemia, on iron supplements
+--- end pickmem memory ---
+```
+
+---
+
+## 8. Let Claude save memories for you
+
+With the MCP server connected, saving stops being manual sentence-picking. Say *"remember that…"* or just share something durable, and — steered by the server's instructions — Claude calls `stage_memories`: it extracts each fact, condenses it to a label + body, picks a `suggested_group` from your existing taxonomy, and stages everything to your **inbox** as pending. Invalid groups are rejected (staging can't invent taxonomy); duplicates of existing vault content are skipped.
+
+Your part shrinks to **review**: open the **Inbox** in the web app (§5.9) — file each item and **Accept**, or **Discard** — or sweep them on the CLI:
+
+```bash
+pickmem review
+```
+
+Nothing an assistant stages ever goes live until you accept it.
+
+> Fully automatic extraction (PickMem noticing memories as you work and proposing them itself) is the planned next step — the inert **Suggestions** entry in the web app reserves its place. Today, extraction is assistant-driven through `stage_memories`.
 
 ---
 
 ## 9. Import a batch of memories
 
-To bring in many items at once — a memory export from another assistant, or your own list — write them to a file and import it. Each item is staged to the inbox as **pending**; nothing goes active until you review.
+To bring in many items at once — a memory export from another assistant, or your own list — write them to a file and import from the CLI. Each item is staged to the **inbox** as pending; nothing goes active until you review.
 
 ```bash
 pickmem import memories.txt
 ```
 
-The parser auto-detects the file shape and takes each chunk as one item:
-
-- JSON array of strings: `["memory 1", "memory 2"]`
-- JSON array of objects with a `memory`/`text`/`content`/`body` field
-- `{"memories": [...]}` wrapper
-- a Markdown bullet/numbered list
-- blank-line-separated paragraphs
-
-Override detection with `--format json|bullets|paragraphs|auto`. Each item is routed with your vault's keyword rules (`pickmem/config.json`, substring → group, first match wins), and de-duplicated on a content hash against everything already in the vault.
+The parser auto-detects the file shape (JSON array of strings; JSON objects with a `memory`/`text`/`content`/`body` field; a `{"memories": [...]}` wrapper; a Markdown bullet/numbered list; or blank-line-separated paragraphs) and takes each chunk as one item. Override with `--format json|bullets|paragraphs|auto`. Items are routed with your vault's keyword rules and de-duplicated on a content hash.
 
 ```
-Parsed:    47      # chunks the parser recognized
+Parsed:    47      # chunks recognized
 Staged:    47      # staged to the inbox as pending
-Routed:    18      # of those, how many got a suggested_group from the rules
-Duplicate: 0       # skipped: content already in the vault
+Routed:    18      # of those, how many got a suggested_group
+Duplicate: 0       # skipped: already in the vault
 ```
 
-Import works best when your file is already roughly one memory per line/paragraph. Each chunk is staged as-is, then you clean up in review.
+Then review the pending items in the web app's **Inbox**, or with `pickmem review`.
 
-> AI-assisted extraction (splitting messy text into clean, atomic facts) is planned for a future release. This version routes with keyword rules only.
-
-Then review what landed:
-
-```bash
-pickmem list --pending
-pickmem review
-```
-
-### Undoing an import
-
-An import only ever stages to the inbox — nothing is active yet — so undoing one just clears the pending items:
+**Undoing an import** (only pending items are ever affected — active notes can't be touched):
 
 ```bash
 pickmem inbox clear --source import --yes   # delete only import-staged items
 pickmem inbox clear --yes                   # …or everything pending
 ```
 
-Run it without `--yes` first to see what would be deleted. Only pending items are eligible — your active notes can never be touched by this command.
+Run it without `--yes` first to preview.
 
 ---
 
-## 10. Review the inbox
-
-```bash
-pickmem review
-```
-
-Opens a TUI over the pending items. Each row shows its label and its `suggested_group` (from routing, if any).
-
-| Key | Action |
-|-----|--------|
-| `space` | Select the row at the cursor |
-| `a` | Accept the selected rows (or the cursor row) — moves each note into its group folder and flips it to active |
-| `A` | Accept every remaining row that has a `suggested_group` |
-| `r` | Reject the selected rows (or the cursor row) — deletes the inbox file |
-| `g` | Reassign group — an overlay where you type a new group or pick an existing one |
-| `/` | Filter |
-| `enter` | Apply all decisions and exit |
-| `q` / `esc` | Cancel — the inbox is left unchanged |
-
-A row with no `suggested_group` can't be accepted with `a`/`A` until you give it a group with `g` — this prevents silently misfiling. Typical flow: press `A` to sweep everything already routed, use `g` on the stragglers, then `enter`.
-
-Accepted notes are now active and will appear in `pickmem pick`.
-
----
-
-## 11. Lenses
-
-A **lens** is a named, saved selection — for a recurring task you don't want to re-pick every time. Lenses live in `pickmem/lenses.json`, so they sync with whatever syncs your vault.
-
-**Save a lens:**
-- In the CLI picker (`pickmem pick`): select items, press `s`, name it.
-- In the extension popup: select items, type a name in the bottom field, save.
-
-**Activate a lens** (replaces the current selection):
-- CLI: `pickmem lens use <name>` — scriptable, e.g. `alias workmode='pickmem lens use Work'`.
-- In the picker: `pickmem pick` → `l` → choose one.
-- Extension: click its chip.
-- From inside Claude Desktop: the model calls `use_lens("<name>")`.
-
-**Manage lenses from the CLI:** `pickmem lens list` (the `*` marks the active one) and `pickmem lens rm <name>` (deletes the lens; its notes are untouched).
-
-Ideas: `Job-Hunt`, `Client-Acme`, `Doctor-Visit`, `Gift-Sister` — anything that repeatedly pulls the same slice of your memory.
-
----
-
-## 12. Editing and organizing in Obsidian
+## 10. Editing and organizing in Obsidian
 
 Every memory note is a normal Markdown file with a YAML frontmatter block. Open the vault in Obsidian and edit freely — with two things to know:
 
-**Create-only.** PickMem only ever creates notes and moves inbox notes into group folders. It never rewrites a note you authored; before updating any file it owns, it checks that the on-disk content still matches what it last wrote, and refuses if you've changed it since. So your Obsidian edits are safe.
+**Create-only.** PickMem only ever creates notes and moves inbox notes into group folders. When it *does* edit a note (via the web app or CLI), it first checks that the on-disk content still matches what it last wrote and refuses if you changed it out from under it. So your Obsidian edits are never silently clobbered.
 
-**Ids are assigned by PickMem.** Each note needs a stable `id` in its frontmatter, and `pickmem add`, `import`, and the extension's **+ Add memory** form all generate it for you. Because of the create-only rule, PickMem won't backfill an id into a file you hand-create. Practical consequences:
+**Ids are assigned by PickMem.** Each note needs a stable `id` in its frontmatter, and every add path (web app, `pickmem add`, `import`, the extension) generates it for you. Practical consequences:
 
-- A note with **no `---` frontmatter block** is ignored by PickMem (a normal Obsidian note — fine, just not a memory item).
-- A note with a **complete, valid frontmatter** (including a real id) is picked up — but generating a valid id by hand is impractical.
-- A note with a **frontmatter block missing its `id`** will cause vault loads to error until you fix or delete it. So: create memory items with `pickmem add`, not by typing a half-frontmatter file in Obsidian.
+- A note with **no `---` frontmatter block** is ignored by PickMem — a normal Obsidian note.
+- A note with a **frontmatter block missing its `id`** will cause vault loads to warn until you fix or delete it. So: create memory items through PickMem, not by typing a half-frontmatter file.
 
-**Regrouping** is just changing a note's `group:` field — the frontmatter `group` is what PickMem reads, not the folder the file sits in. You can move files around in Obsidian too; keep the `group:` field in sync if you want the picker's tree to match.
+**Your taxonomy is your folder tree.** Make a folder in Obsidian and it becomes a category — the same as creating a group in the web app. Every directory under the vault (except `pickmem/`) is a group PickMem knows about.
 
-**Your taxonomy is your folder tree.** You aren't limited to the starter groups — **make a folder in Obsidian and it becomes a category.** Every directory under the vault (except `pickmem/`) is a group PickMem knows about: it's what `list_groups` reports to Claude for classification, and what the review overlay suggests when you reassign. Create `work/client-acme/` or `hobbies/sailing/` and Claude can file new memories straight into them — even before any note lives there.
-
-**Keeping a category private.** Because folder names go to the model via `list_groups`, prefix a folder with `_` to keep it *out* of the shared list: `_medical/`, `_finance/`. You can still file notes there by hand in Obsidian, but the name never leaves your disk and Claude never sees it. (Dot-folders like `.obsidian` are excluded too.)
+**Keeping a category private.** Because folder names go to the model via `list_groups`, prefix a folder with `_` (`_medical/`, `_finance/`) to keep it *out* of the shared list. You can still file notes there by hand; the name never leaves your disk. (Dot-folders like `.obsidian` are excluded too.)
 
 **Don't hand-edit** files under `pickmem/` (`config.json`, `lenses.json`, `active.json`, `inbox/`) — let the tools manage those.
 
 ---
 
-## 13. Command reference
+## 11. CLI reference (scripting & agents)
+
+Everything the web app does is also available headless — useful for scripting, automation, and for AI agents driving PickMem programmatically. `pickmem pick` and `pickmem review` are interactive terminal UIs; the web app is the recommended surface for humans, but both remain fully supported.
 
 The vault path for every command except `init` resolves as `--vault` → `$PICKMEM_VAULT` → recorded user config.
 
 ```
 pickmem init <path> [--bare] [--force]         # create a vault; applies the starter taxonomy unless --bare
+pickmem web [--port 4577] [--host 127.0.0.1] [--no-open]   # launch the web app
 
 pickmem add --label "…" [--group …] [--type fact|idea|thought|reference] [--tags a,b]
             [--body "…" | --file <path|-> | (stdin) | ($EDITOR)] [--inbox]
@@ -473,7 +412,7 @@ pickmem show <id-or-suffix> [--raw]
 pickmem edit <id-or-suffix>                    # opens $EDITOR
 pickmem rm <id-or-suffix> --yes
 
-pickmem pick                                   # TUI picker → writes active.json
+pickmem pick                                   # terminal picker → writes active.json
 pickmem status                                 # vault summary + current selection
 pickmem context [--copy]                       # print (or copy) the assembled block
 pickmem lens list | use <name> | rm <name>     # manage saved lenses
@@ -483,30 +422,31 @@ pickmem serve                                  # MCP stdio server (clients launc
 pickmem install <claude-desktop|cursor> [--dry-run] [--name <n>] [--bin <path>]
 pickmem uninstall <claude-desktop|cursor> [--name <n>]
 
-pickmem import <file> [--format auto|json|bullets|paragraphs]
-              # stages parsed items to the inbox as pending
-pickmem review                                 # TUI to accept/reject/reassign inbox items
+pickmem import <file> [--format auto|json|bullets|paragraphs]   # stages parsed items to the inbox
+pickmem review                                 # terminal UI to accept/reject/reassign inbox items
 
 --vault <path>                                 # global override on any command
 ```
 
 ---
 
-## 14. Troubleshooting
+## 12. Troubleshooting
 
 **"no vault path set"** — you haven't `init`-ed, or you're running a command before init. Run `pickmem init <path>`, set `$PICKMEM_VAULT`, or pass `--vault`.
 
-**"warning: skipped <file>: …"** — a `.md` file in the vault has a `---` block with a missing or malformed `id` (usually a half-typed note in Obsidian), or a duplicate id. The file is skipped, everything else works; fix or delete it to clear the warning. (Files with no frontmatter at all are ignored silently — they're your normal notes.)
+**`pickmem web` says "address already in use"** — another server (or a stale one) holds the port. Start on another with `pickmem web --port 8080`, or stop the other instance.
 
-**"refusing to overwrite … create-only"** — you edited a file (probably in Obsidian) between PickMem reading it and trying to write it. That's the guard protecting your edit; re-run the command and it'll re-read your version.
+**The web app won't load / "can't reach the PickMem server"** — the `pickmem web` process stopped. Restart it; the terminal running it must stay open.
 
-**Claude Desktop doesn't call PickMem tools** — confirm the connector is listed and connected (Settings → Connectors), set the four tools to *Always allow*, and add the custom instruction from §7. Fully quit and relaunch the app after `pickmem install`, not just close the window.
+**"warning: skipped <file>: …"** — a `.md` file has a `---` block with a missing/malformed `id`, or a duplicate id (usually a half-typed note in Obsidian). It's skipped, everything else works; fix or delete it. (Files with no frontmatter are ignored silently.)
 
-**`pickmem import` staged 0 items** — the parser didn't recognize the file shape. Try an explicit `--format bullets` or `--format paragraphs`, and check the file isn't empty.
+**"refusing to overwrite … create-only"** — a file changed on disk (e.g. in Obsidian) between PickMem reading and writing it. That's the guard protecting your edit; re-run and it'll re-read your version.
+
+**Claude Desktop doesn't call PickMem tools** — confirm the connector is listed and connected (Settings → Connectors), set its tools to *Always allow*, and add the custom instruction from §7. Fully quit and relaunch the app after `pickmem install`, not just close the window.
+
+**`pickmem import` staged 0 items** — the parser didn't recognize the file shape. Try `--format bullets` or `--format paragraphs`, and check the file isn't empty.
 
 **Extension shows "input not found"** — the target site changed its markup. Insert is disabled but **Copy** still works; the adapter selector is a one-line fix in `extension/src/adapters/index.ts`.
-
-**Pointing the extension at a different vault** — click **switch** next to the vault name at the top of the popup and pick the new folder.
 
 ---
 

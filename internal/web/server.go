@@ -61,7 +61,6 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/groups/rename", s.withVault(s.handleRenameGroup))
 	s.mux.HandleFunc("POST /api/groups/delete", s.withVault(s.handleDeleteGroup))
 	s.mux.HandleFunc("PUT /api/vault/name", s.withVault(s.handleSetVaultName))
-	s.mux.HandleFunc("GET /api/export", s.withVault(s.handleExport))
 	s.mux.HandleFunc("POST /api/import", s.withVault(s.handleImport))
 	s.mux.HandleFunc("POST /api/vault/clear", s.withVault(s.handleClearVault))
 	s.mux.HandleFunc("POST /api/vaults/switch", s.withLock(s.handleSwitchVault))
