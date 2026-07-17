@@ -105,29 +105,21 @@ func TestStageMemoriesStagesPendingOnly(t *testing.T) {
 	}
 }
 
-func TestStageMemoriesCarriesType(t *testing.T) {
+// Type was retired in favor of tags; staging no longer carries a type and
+// must not invent tags of its own — staged notes start tagless.
+func TestStageMemoriesAddsNoTags(t *testing.T) {
 	s, cs, _ := newFixture(t)
 	sr := callStage(t, cs, []map[string]any{
-		{"label": "sail solo", "body": "wants to try a solo overnight sail", "type": "idea"},
-		{"label": "penicillin", "body": "allergic to penicillin"},   // no type → fact
-		{"label": "weird", "body": "some note", "type": "nonsense"}, // unknown → fact
+		{"label": "sail solo", "body": "wants to try a solo overnight sail"},
+		{"label": "penicillin", "body": "allergic to penicillin"},
 	})
-	if sr.Staged != 3 {
-		t.Fatalf("result = %+v, want 3 staged", sr)
+	if sr.Staged != 2 {
+		t.Fatalf("result = %+v, want 2 staged", sr)
 	}
-	if sr.Items[0].Type != vault.TypeIdea {
-		t.Errorf("item 0 type = %q, want idea", sr.Items[0].Type)
-	}
-	if sr.Items[1].Type != vault.TypeFact || sr.Items[2].Type != vault.TypeFact {
-		t.Errorf("missing/unknown type should default to fact: %+v", sr.Items)
-	}
-	// And it's persisted on the note.
-	byLabel := map[string]*vault.Note{}
 	for _, n := range s.ListPending() {
-		byLabel[n.Label] = n
-	}
-	if byLabel["sail solo"].Kind() != vault.TypeIdea {
-		t.Errorf("idea kind not persisted: %+v", byLabel["sail solo"])
+		if len(n.Tags) != 0 {
+			t.Errorf("staged note should start tagless: %+v", n)
+		}
 	}
 }
 

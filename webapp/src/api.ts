@@ -68,11 +68,8 @@ export const api = {
   setVaultName: (name: string) =>
     request("/vault/name", { method: "PUT", body: JSON.stringify({ name }) }),
 
-  setNoteTypes: (types: string[]) =>
-    request("/note-types", { method: "PUT", body: JSON.stringify({ types }) }),
-
-  renameNoteType: (from: string, to: string) =>
-    request("/note-types/rename", { method: "POST", body: JSON.stringify({ from, to }) }),
+  setSuggestedTags: (tags: string[]) =>
+    request("/suggested-tags", { method: "PUT", body: JSON.stringify({ tags }) }),
 
   clearVault: () => request("/vault/clear", { method: "POST" }),
 
@@ -94,3 +91,18 @@ export const api = {
   forgetVault: (path: string) =>
     request("/vaults/forget", { method: "POST", body: JSON.stringify({ path }) }),
 };
+
+// pickFolder opens the OS-native folder chooser (run server-side, since the
+// browser can't hand back a real filesystem path) and resolves to the chosen
+// absolute path, or "" if the user canceled. Unlike the endpoints above it
+// returns a bare { path } rather than State, so it doesn't go through
+// request(); it throws with the server's { error } on a non-2xx.
+export async function pickFolder(): Promise<string> {
+  const res = await fetch("/api/pick-folder", { method: "POST" });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : {};
+  if (!res.ok) {
+    throw new Error(data?.error || `${res.status} ${res.statusText}`);
+  }
+  return (data?.path as string) || "";
+}

@@ -12,10 +12,12 @@ import (
 // materializes items back into real notes.
 
 type portableItem struct {
-	ID        string   `json:"id"`
-	Label     string   `json:"label"`
-	Body      string   `json:"body"`
-	Type      string   `json:"type"`
+	ID    string `json:"id"`
+	Label string `json:"label"`
+	Body  string `json:"body"`
+	// Type is a legacy field: older exports carried a single note type. It's
+	// folded into Tags on import so nothing is lost (see importVault).
+	Type      string   `json:"type,omitempty"`
 	Group     string   `json:"group"`
 	Source    string   `json:"source"`
 	Status    string   `json:"status"` // "active" | "inbox"
@@ -49,12 +51,16 @@ func importVault(s *vault.Store, pv portableVault) (int, error) {
 		if group == "" {
 			group = "imported"
 		}
+		tags := it.Tags
+		// Fold a legacy note type into tags (dropping the old default "fact").
+		if t := it.Type; t != "" && t != vault.TagFact {
+			tags = append([]string{t}, tags...)
+		}
 		n := &vault.Note{
 			Frontmatter: vault.Frontmatter{
 				Label:  it.Label,
 				Group:  group,
-				Type:   vault.NormalizeType(it.Type),
-				Tags:   it.Tags,
+				Tags:   tags,
 				Source: vault.SourceImport,
 			},
 			Body: it.Body,

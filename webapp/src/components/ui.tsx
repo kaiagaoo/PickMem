@@ -64,8 +64,15 @@ export function Menu({
   );
 }
 
-export function TypeTag({ type }: { type: string }) {
-  return <span className={`type-tag t-${type}`}>{type}</span>;
+// The well-known tags that keep a distinct hue (formerly the note "types").
+// Any other tag renders in the neutral chip color.
+const KNOWN_TAG_HUES = new Set(["fact", "idea", "thought", "reference"]);
+
+// TagChip renders a single tag as a `#name` chip, colored if it's one of the
+// well-known tags.
+export function TagChip({ tag }: { tag: string }) {
+  const hue = KNOWN_TAG_HUES.has(tag) ? ` t-${tag}` : "";
+  return <span className={`tag-chip${hue}`}>#{tag}</span>;
 }
 
 // PickToggle is the accent moment of the app — on = "I chose this."

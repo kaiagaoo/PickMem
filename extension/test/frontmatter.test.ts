@@ -99,3 +99,39 @@ body
   assert.equal(parsed.frontmatter.source, "manual");
   assert.equal(parsed.frontmatter.status, "active");
 });
+
+test("legacy `type:` folds into tags (dropping the fact default)", () => {
+  // Notes written before types were folded into tags carry a `type:` line.
+  // A non-fact type becomes the first tag; `fact` (the old default) is dropped.
+  const idea = parseNote(`---
+id: X
+label: solo sail
+group: projects
+type: idea
+tags:
+  - sailing
+source: manual
+status: active
+created_at: 2026-07-01T12:00:00Z
+---
+
+wants to try a solo overnight sail
+`);
+  assert.ok(idea);
+  assert.deepEqual(idea.frontmatter.tags, ["idea", "sailing"]);
+
+  const fact = parseNote(`---
+id: Y
+label: y
+group: g
+type: fact
+source: manual
+status: active
+created_at: 2026-07-01T12:00:00Z
+---
+
+body
+`);
+  assert.ok(fact);
+  assert.equal(fact.frontmatter.tags, undefined);
+});

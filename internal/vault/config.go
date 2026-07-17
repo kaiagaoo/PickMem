@@ -27,10 +27,15 @@ type Config struct {
 	// M4's import router; unused in M1 but reserved to keep the shape
 	// stable.
 	RoutingRules []RoutingRule `json:"routing_rules,omitempty"`
-	// NoteTypes is the vault's type vocabulary (the kinds a note can be).
-	// Empty means "use the built-in defaults" (see DefaultNoteTypes), so old
-	// vaults and fresh ones behave identically until the user customizes it.
-	NoteTypes []string `json:"note_types,omitempty"`
+	// SuggestedTags is the vault's set of quick-pick tag chips. Empty means
+	// "use the built-in defaults" (see DefaultSuggestedTags), so old vaults and
+	// fresh ones behave identically until the user customizes it.
+	SuggestedTags []string `json:"suggested_tags,omitempty"`
+	// LegacyNoteTypes reads the pre-tags `note_types` key so an existing
+	// vault's customized vocabulary carries over as suggested tags. Never
+	// written back (see SaveConfig normalization is unnecessary — omitempty
+	// keeps it out once SuggestedTags is set).
+	LegacyNoteTypes []string `json:"note_types,omitempty"`
 }
 
 // RoutingRule assigns a suggested group when a keyword substring (case-
@@ -63,6 +68,12 @@ func (s *Store) LoadConfig() (Config, error) {
 	if err := json.Unmarshal(data, &c); err != nil {
 		return Config{}, fmt.Errorf("decode config: %w", err)
 	}
+	// Migrate a pre-tags vault: an old `note_types` list becomes the
+	// suggested-tag chips. Cleared here so the next SaveConfig drops the key.
+	if len(c.SuggestedTags) == 0 && len(c.LegacyNoteTypes) > 0 {
+		c.SuggestedTags = c.LegacyNoteTypes
+	}
+	c.LegacyNoteTypes = nil
 	return c, nil
 }
 
@@ -71,84 +82,20 @@ func (s *Store) SaveConfig(c Config) error {
 	return writeJSONAtomic(s.configPath(), c)
 }
 
-// NoteTypes returns the vault's type vocabulary: the user's configured list,
-// or the built-in defaults when none is set. TypeFact is always guaranteed to
-// be present and first, since it's the canonical default.
-func (s *Store) NoteTypes() []string {
+// SuggestedTags returns the vault's quick-pick tag chips: the user's
+// configured list, or the built-in defaults when none is set.
+func (s *Store) SuggestedTags() []string {
 	cfg, err := s.LoadConfig()
-	if err != nil || len(cfg.NoteTypes) == 0 {
-		return DefaultNoteTypes()
+	if err != nil || len(cfg.SuggestedTags) == 0 {
+		return DefaultSuggestedTags()
 	}
-	return normalizeTypeList(cfg.NoteTypes)
+	return normalizeTagList(cfg.SuggestedTags)
 }
 
-// RenameNoteType renames a type in the vault's vocabulary and rewrites every
-// active note currently using it. The default type (TypeFact) can't be
-// renamed, and the new name must not already exist. Returns the number of
-// notes updated.
-func (s *Store) RenameNoteType(from, to string) (int, error) {
-	from = strings.TrimSpace(from)
-	to = strings.TrimSpace(to)
-	if from == "" || to == "" {
-		return 0, errors.New("type name required")
-	}
-	if from == TypeFact {
-		return 0, errors.New("the default type (fact) can't be renamed")
-	}
-	if from == to {
-		return 0, nil
-	}
-	list := s.NoteTypes() // materializes defaults if the list is empty
-	found := false
-	for _, t := range list {
-		if t == to {
-			return 0, fmt.Errorf("type %q already exists", to)
-		}
-		if t == from {
-			found = true
-		}
-	}
-	if !found {
-		return 0, fmt.Errorf("type %q not found", from)
-	}
-
-	next := make([]string, len(list))
-	for i, t := range list {
-		if t == from {
-			next[i] = to
-		} else {
-			next[i] = t
-		}
-	}
-	cfg, err := s.LoadConfig()
-	if err != nil {
-		return 0, err
-	}
-	cfg.NoteTypes = next
-	if err := s.SaveConfig(cfg); err != nil {
-		return 0, err
-	}
-
-	updated := 0
-	for _, n := range s.ListActive() {
-		if n.Kind() != from {
-			continue
-		}
-		if _, err := s.EditNote(n.ID, NoteEdit{
-			Label: n.Label, Group: n.Group, Body: n.Body, Type: to, Tags: n.Tags,
-		}); err != nil {
-			return updated, err
-		}
-		updated++
-	}
-	return updated, nil
-}
-
-// normalizeTypeList trims, de-dupes, drops empties, and guarantees TypeFact is
-// present and first — so the default type can never be configured away.
-func normalizeTypeList(in []string) []string {
-	out := []string{TypeFact}
-	seen := map[string]bool{TypeFact: true}
+// normalizeTagList trims, de-dupes, and drops empties, preserving order.
+func normalizeTagList(in []string) []string {
+	out := make([]string, 0, len(in))
+	seen := map[string]bool{}
 	for _, t := range in {
 		t = strings.TrimSpace(t)
 		if t == "" || seen[t] {

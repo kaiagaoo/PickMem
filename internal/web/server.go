@@ -61,14 +61,17 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/groups/rename", s.withVault(s.handleRenameGroup))
 	s.mux.HandleFunc("POST /api/groups/delete", s.withVault(s.handleDeleteGroup))
 	s.mux.HandleFunc("PUT /api/vault/name", s.withVault(s.handleSetVaultName))
-	s.mux.HandleFunc("PUT /api/note-types", s.withVault(s.handleSetNoteTypes))
-	s.mux.HandleFunc("POST /api/note-types/rename", s.withVault(s.handleRenameNoteType))
+	s.mux.HandleFunc("PUT /api/suggested-tags", s.withVault(s.handleSetSuggestedTags))
 	s.mux.HandleFunc("POST /api/import", s.withVault(s.handleImport))
 	s.mux.HandleFunc("POST /api/vault/clear", s.withVault(s.handleClearVault))
 	s.mux.HandleFunc("POST /api/vaults/switch", s.withLock(s.handleSwitchVault))
 	s.mux.HandleFunc("POST /api/vaults/create", s.withLock(s.handleCreateVault))
 	s.mux.HandleFunc("POST /api/vaults/import", s.withLock(s.handleImportVaultAsNew))
 	s.mux.HandleFunc("POST /api/vaults/forget", s.withVault(s.handleForgetVault))
+
+	// Native folder picker for the vault dialogs. No lock/vault: the dialog
+	// blocks on user input and never touches the store.
+	s.mux.HandleFunc("POST /api/pick-folder", s.handlePickFolder)
 
 	// Everything else: the embedded SPA, with a fallback to index.html so
 	// client-side navigation works.
@@ -100,7 +103,6 @@ type addNoteReq struct {
 	Label string   `json:"label"`
 	Group string   `json:"group"`
 	Body  string   `json:"body"`
-	Type  string   `json:"type"`
 	Tags  []string `json:"tags"`
 	// ToInbox routes a new note to the inbox (status=pending) for later
 	// review instead of activating it immediately. The blueprint's
@@ -122,7 +124,6 @@ func (s *Server) handleAddNote(w http.ResponseWriter, r *http.Request) {
 		Frontmatter: vault.Frontmatter{
 			Label: strings.TrimSpace(req.Label),
 			Group: strings.TrimSpace(req.Group),
-			Type:  vault.NormalizeType(req.Type),
 			Tags:  cleanTags(req.Tags),
 		},
 		Body: req.Body,
@@ -152,7 +153,6 @@ func (s *Server) handleEditNote(w http.ResponseWriter, r *http.Request) {
 		Label: strings.TrimSpace(req.Label),
 		Group: strings.TrimSpace(req.Group),
 		Body:  req.Body,
-		Type:  req.Type,
 		Tags:  cleanTags(req.Tags),
 	})
 	if err != nil {

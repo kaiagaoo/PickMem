@@ -7,14 +7,11 @@ import (
 )
 
 // noteDTO is the wire shape of a single memory note. It flattens the note's
-// frontmatter + body into the JSON the SPA consumes. Kind() is used so the
-// default (fact) is always explicit on the wire, even though it's omitted
-// on disk.
+// frontmatter + body into the JSON the SPA consumes.
 type noteDTO struct {
 	ID        string   `json:"id"`
 	Label     string   `json:"label"`
 	Group     string   `json:"group"`
-	Type      string   `json:"type"`
 	Tags      []string `json:"tags"`
 	Body      string   `json:"body"`
 	Source    string   `json:"source"`
@@ -33,7 +30,6 @@ func toDTO(n *vault.Note) noteDTO {
 		ID:        n.ID,
 		Label:     n.Label,
 		Group:     n.Group,
-		Type:      n.Kind(),
 		Tags:      tags,
 		Body:      n.Body,
 		Source:    n.Source,
@@ -58,18 +54,18 @@ type activeDTO struct {
 // stateDTO is the single bootstrap payload the SPA loads and re-loads after
 // every mutation, so the whole client is a pure function of one fetch.
 type stateDTO struct {
-	VaultPath string        `json:"vault_path"`
-	VaultName string        `json:"vault_name"`
-	Notes     []noteDTO     `json:"notes"`
-	Pending   []noteDTO     `json:"pending"`
-	Groups    []string      `json:"groups"`
-	Lenses    []lensDTO     `json:"lenses"`
-	Active    activeDTO     `json:"active"`
-	Context   string        `json:"context"`
-	Tokens    int           `json:"tokens"`
-	NoteTypes []string      `json:"note_types"`
-	Warnings  []string      `json:"warnings"`
-	Vaults    []vaultRefDTO `json:"vaults"`
+	VaultPath     string        `json:"vault_path"`
+	VaultName     string        `json:"vault_name"`
+	Notes         []noteDTO     `json:"notes"`
+	Pending       []noteDTO     `json:"pending"`
+	Groups        []string      `json:"groups"`
+	Lenses        []lensDTO     `json:"lenses"`
+	Active        activeDTO     `json:"active"`
+	Context       string        `json:"context"`
+	Tokens        int           `json:"tokens"`
+	SuggestedTags []string      `json:"suggested_tags"`
+	Warnings      []string      `json:"warnings"`
+	Vaults        []vaultRefDTO `json:"vaults"`
 }
 
 // buildState assembles the full client state from the store. The store is
@@ -127,17 +123,17 @@ func buildState(s *vault.Store) (stateDTO, error) {
 	}
 
 	return stateDTO{
-		VaultPath: s.Root,
-		VaultName: cfg.VaultName,
-		Notes:     notes,
-		Pending:   pending,
-		Groups:    s.KnownGroups(),
-		Lenses:    lensDTOs,
-		Active:    activeDTO{ActiveLens: active.ActiveLens, ItemIDs: ids},
-		Context:   ctx,
-		Tokens:    picker.EstimateTokens(bodies),
-		NoteTypes: s.NoteTypes(),
-		Warnings:  s.Warnings(),
-		Vaults:    recentVaultRefs(s.Root),
+		VaultPath:     s.Root,
+		VaultName:     cfg.VaultName,
+		Notes:         notes,
+		Pending:       pending,
+		Groups:        s.KnownGroups(),
+		Lenses:        lensDTOs,
+		Active:        activeDTO{ActiveLens: active.ActiveLens, ItemIDs: ids},
+		Context:       ctx,
+		Tokens:        picker.EstimateTokens(bodies),
+		SuggestedTags: s.SuggestedTags(),
+		Warnings:      s.Warnings(),
+		Vaults:        recentVaultRefs(s.Root),
 	}, nil
 }

@@ -18,33 +18,21 @@ const (
 	StatusActive  = "active"
 	StatusPending = "pending"
 
-	// Kinds of note. Type is what you're storing, independent of Group
-	// (where it lives) — it lets a pick target "my ideas about X" rather
-	// than every note under X. TypeFact is the default and is omitted on
-	// disk, so fact notes and pre-type notes stay byte-clean; only the
-	// non-default kinds carry an explicit `type:` line.
-	TypeFact      = "fact"      // a stable fact — the classic "memory"
-	TypeIdea      = "idea"      // a proposal or concept to develop
-	TypeThought   = "thought"   // a fleeting reflection, not yet resolved
-	TypeReference = "reference" // external material: a quote, link, excerpt
+	// Well-known tag names. These are just ordinary tags, but the UI offers
+	// them as one-click "suggested" chips and gives them distinct colors.
+	// A note used to carry a single `type:` field; that was folded into tags
+	// (see ParseNote's legacy migration), so these are plain tag values now.
+	TagFact      = "fact"      // a stable fact — the classic "memory"
+	TagIdea      = "idea"      // a proposal or concept to develop
+	TagThought   = "thought"   // a fleeting reflection, not yet resolved
+	TagReference = "reference" // external material: a quote, link, excerpt
 )
 
-// DefaultNoteTypes is the built-in type vocabulary a vault starts with. Users
-// can customize the list (see Config.NoteTypes); TypeFact stays the canonical
-// default and is always available.
-func DefaultNoteTypes() []string {
-	return []string{TypeFact, TypeIdea, TypeThought, TypeReference}
-}
-
-// NormalizeType canonicalizes a raw type string. An empty value becomes
-// TypeFact (the default, omitted on disk); any other non-empty value is kept
-// as-is, so user-defined types survive. Trimmed for tidiness.
-func NormalizeType(s string) string {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return TypeFact
-	}
-	return s
+// DefaultSuggestedTags is the built-in set of quick-pick tag chips a vault
+// starts with. Users can customize the list (see Config.SuggestedTags); they
+// are ordinary tags, not a required vocabulary.
+func DefaultSuggestedTags() []string {
+	return []string{TagFact, TagIdea, TagThought, TagReference}
 }
 
 // Frontmatter is the YAML block at the top of a memory note. Field order in
@@ -53,18 +41,12 @@ type Frontmatter struct {
 	ID             string    `yaml:"id"`
 	Label          string    `yaml:"label"`
 	Group          string    `yaml:"group"`
-	Type           string    `yaml:"type,omitempty"`
 	Tags           []string  `yaml:"tags,omitempty"`
 	Source         string    `yaml:"source"`
 	Status         string    `yaml:"status"`
 	CreatedAt      time.Time `yaml:"created_at"`
 	SuggestedGroup string    `yaml:"suggested_group,omitempty"`
 }
-
-// Kind returns the note's normalized type (TypeFact for the default/empty
-// case). Prefer this over reading Type directly when you need a concrete
-// kind to display or filter on.
-func (f Frontmatter) Kind() string { return NormalizeType(f.Type) }
 
 // Note is a single memory item: its parsed frontmatter, body, and the vault-
 // relative path where it lives on disk.
@@ -91,18 +73,39 @@ func ParseNote(data []byte) (*Note, error) {
 		return nil, fmt.Errorf("frontmatter missing required field: label")
 	}
 	n.Body = strings.TrimLeft(string(rest), "\n")
+
+	// Legacy migration: notes written before types were folded into tags
+	// carry a `type:` line. Fold a non-default type into the tag list (the
+	// Frontmatter struct no longer has a Type field, so read it via a
+	// throwaway). `fact` was the implicit default and adds no information, so
+	// it's dropped. The `type:` line simply vanishes the next time the note
+	// is saved.
+	var legacy struct {
+		Type string `yaml:"type"`
+	}
+	if _, err := frontmatter.Parse(bytes.NewReader(data), &legacy); err == nil {
+		if t := strings.TrimSpace(legacy.Type); t != "" && t != TagFact {
+			n.Tags = appendUniqueTag(n.Tags, t)
+		}
+	}
 	return n, nil
+}
+
+// appendUniqueTag adds tag to the front of tags if not already present,
+// preserving the note's own tag order after it.
+func appendUniqueTag(tags []string, tag string) []string {
+	for _, t := range tags {
+		if t == tag {
+			return tags
+		}
+	}
+	return append([]string{tag}, tags...)
 }
 
 // Serialize renders a Note back to disk bytes: `---\n<yaml>---\n\n<body>\n`.
 // Uses an explicit yaml.Encoder so field order matches the struct layout.
 func (n *Note) Serialize() ([]byte, error) {
-	// Canonicalize the default kind to empty so fact notes serialize
-	// without a `type:` line (omitempty), keeping them byte-clean.
 	fm := n.Frontmatter
-	if NormalizeType(fm.Type) == TypeFact {
-		fm.Type = ""
-	}
 	var buf bytes.Buffer
 	buf.WriteString("---\n")
 	enc := yaml.NewEncoder(&buf)

@@ -56,7 +56,6 @@ func (s *Store) RenameGroup(from, to string) (int, error) {
 			Label: n.Label,
 			Group: newGroup,
 			Body:  n.Body,
-			Type:  n.Kind(),
 			Tags:  n.Tags,
 		}); err != nil {
 			return moved, fmt.Errorf("move %q: %w", n.Label, err)

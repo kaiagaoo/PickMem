@@ -4,7 +4,6 @@ export interface Note {
   id: string;
   label: string;
   group: string;
-  type: string;
   tags: string[];
   body: string;
   source: string;
@@ -43,7 +42,7 @@ export interface State {
   active: Active;
   context: string;
   tokens: number;
-  note_types: string[];
+  suggested_tags: string[];
   warnings: string[];
 }
 
@@ -51,7 +50,6 @@ export interface NoteInput {
   label: string;
   group: string;
   body: string;
-  type: string;
   tags: string[];
   to_inbox?: boolean;
 }

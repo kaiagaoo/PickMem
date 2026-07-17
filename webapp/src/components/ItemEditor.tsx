@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Note, NoteInput } from "../types";
-import { Modal } from "./ui";
+import { Modal, TagChip } from "./ui";
 
 // ItemEditor is the add/edit form. Group is free-text with a datalist of
 // known paths (type a new `a/b` path to create a folder). New items route to
@@ -8,21 +8,20 @@ import { Modal } from "./ui";
 export function ItemEditor({
   note,
   groups,
-  noteTypes,
+  suggestedTags,
   defaultGroup,
   onSave,
   onClose,
 }: {
   note: Note | null;
   groups: string[];
-  noteTypes: string[];
+  suggestedTags: string[];
   defaultGroup?: string;
   onSave: (input: NoteInput) => Promise<void>;
   onClose: () => void;
 }) {
   const [label, setLabel] = useState(note?.label ?? "");
   const [group, setGroup] = useState(note?.group ?? defaultGroup ?? "");
-  const [type, setType] = useState(note?.type ?? "fact");
   const [tags, setTags] = useState((note?.tags ?? []).join(", "));
   const [body, setBody] = useState(note?.body ?? "");
   const [toInbox, setToInbox] = useState(false);
@@ -33,6 +32,15 @@ export function ItemEditor({
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
+
+  // Clicking a suggested chip adds or removes that tag, keeping the free-text
+  // field (the source of truth) in sync.
+  const toggleTag = (t: string) => {
+    const next = tagList.includes(t)
+      ? tagList.filter((x) => x !== t)
+      : [...tagList, t];
+    setTags(next.join(", "));
+  };
 
   const submit = async () => {
     if (!label.trim() || !group.trim()) {
@@ -45,7 +53,6 @@ export function ItemEditor({
       await onSave({
         label: label.trim(),
         group: group.trim(),
-        type,
         tags: tagList,
         body: body.trimEnd(),
         to_inbox: note ? false : toInbox,
@@ -101,32 +108,20 @@ export function ItemEditor({
           placeholder="in your own words — what the assistant will read"
         />
       </label>
-      <div className="two-col">
-        <label className="field">
-          <span>Type</span>
-          <select value={type} onChange={(e) => setType(e.target.value)}>
-            {noteTypes.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span>Group</span>
-          <input
-            list="known-groups"
-            value={group}
-            onChange={(e) => setGroup(e.target.value)}
-            placeholder="finance/income"
-          />
-          <datalist id="known-groups">
-            {groups.map((g) => (
-              <option key={g} value={g} />
-            ))}
-          </datalist>
-        </label>
-      </div>
+      <label className="field">
+        <span>Group</span>
+        <input
+          list="known-groups"
+          value={group}
+          onChange={(e) => setGroup(e.target.value)}
+          placeholder="finance/income"
+        />
+        <datalist id="known-groups">
+          {groups.map((g) => (
+            <option key={g} value={g} />
+          ))}
+        </datalist>
+      </label>
       <label className="field">
         <span>Tags (comma-separated)</span>
         <input
@@ -135,6 +130,21 @@ export function ItemEditor({
           placeholder="optional"
         />
       </label>
+      {suggestedTags.length > 0 && (
+        <div className="tag-suggest">
+          {suggestedTags.map((t) => (
+            <button
+              type="button"
+              key={t}
+              className={`tag-suggest-chip ${tagList.includes(t) ? "on" : ""}`}
+              onClick={() => toggleTag(t)}
+              title={tagList.includes(t) ? "Remove tag" : "Add tag"}
+            >
+              <TagChip tag={t} />
+            </button>
+          ))}
+        </div>
+      )}
     </Modal>
   );
 }

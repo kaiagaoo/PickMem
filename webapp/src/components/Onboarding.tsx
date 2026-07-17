@@ -2,7 +2,6 @@ import { useState } from "react";
 import { api } from "../api";
 import type { State } from "../types";
 import { DOMAINS } from "../onboardingTemplates";
-import { TypeTag } from "./ui";
 
 // The guided first-run flow: pick domains (→ groups), fill in as many
 // suggested memories as you like (each with a guiding question + an example
@@ -89,7 +88,6 @@ export function Onboarding({
           label: item.label,
           group: item.group,
           body: item.body,
-          type: "fact",
           tags: [],
         });
         for (const n of latest.notes) {
@@ -265,7 +263,6 @@ export function Onboarding({
                   <div className="mc-main">
                     <div className="mc-top">
                       <span className="mc-label">{it.label}</span>
-                      <TypeTag type="fact" />
                     </div>
                     <div className="mc-body">{it.body}</div>
                     <div className="mc-path mono">{it.group}</div>

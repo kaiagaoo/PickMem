@@ -26,8 +26,7 @@ interface Actions {
   renameGroup: (from: string, to: string) => Promise<void>;
   deleteGroup: (path: string) => Promise<void>;
   setVaultName: (name: string) => Promise<void>;
-  setNoteTypes: (types: string[]) => Promise<void>;
-  renameNoteType: (from: string, to: string) => Promise<void>;
+  setSuggestedTags: (tags: string[]) => Promise<void>;
   importVault: (blob: unknown) => Promise<void>;
   clearVault: () => Promise<void>;
   switchVault: (path: string) => Promise<void>;
@@ -109,8 +108,7 @@ export function VaultProvider({
       renameGroup: (from, to) => run(api.renameGroup(from, to)),
       deleteGroup: (path) => run(api.deleteGroup(path)),
       setVaultName: (name) => run(api.setVaultName(name)),
-      setNoteTypes: (types) => run(api.setNoteTypes(types)),
-      renameNoteType: (from, to) => run(api.renameNoteType(from, to)),
+      setSuggestedTags: (tags) => run(api.setSuggestedTags(tags)),
       importVault: (blob) => run(api.importVault(blob)),
       clearVault: () => run(api.clearVault()),
       switchVault: (path) => run(api.switchVault(path)),

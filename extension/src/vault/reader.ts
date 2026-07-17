@@ -18,7 +18,14 @@ export interface Vault {
   lenses: Lens[];
   activeSelection: Active;
   byID: Map<string, Note>;
+  /** Quick-pick tag chips offered in the add form (config.suggested_tags,
+   *  falling back to the built-in defaults). */
+  suggestedTags: string[];
 }
+
+// The built-in quick-pick tags a vault starts with, matching the Go side's
+// DefaultSuggestedTags. They are ordinary tags, not a required vocabulary.
+export const DEFAULT_SUGGESTED_TAGS = ["fact", "idea", "thought", "reference"];
 
 /** Read the full vault contents. Cheap enough (~10-100ms for a few
  *  hundred notes on modern SSDs) to re-run every popup open — avoids the
@@ -46,7 +53,18 @@ export async function readVault(root: FileSystemDirectoryHandle): Promise<Vault>
     item_ids: [],
   });
 
-  return { active, pending, lenses, activeSelection, byID };
+  // suggested_tags is the current key; note_types is the pre-tags legacy key.
+  const cfg = await readJSON<{ suggested_tags?: string[]; note_types?: string[] }>(
+    root,
+    [PICKMEM_DIR, CONFIG_FILE],
+    {}
+  );
+  const configured = cfg.suggested_tags?.length
+    ? cfg.suggested_tags
+    : cfg.note_types ?? [];
+  const suggestedTags = configured.length ? configured : DEFAULT_SUGGESTED_TAGS;
+
+  return { active, pending, lenses, activeSelection, byID, suggestedTags };
 }
 
 /** Enumerate every group name currently in use across active notes.

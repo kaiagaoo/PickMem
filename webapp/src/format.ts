@@ -25,7 +25,7 @@ export function buildContext(state: State, fmt: CopyFormat): string {
         label: n.label,
         body: n.body,
         group: n.group,
-        type: n.type,
+        tags: n.tags,
       })),
       null,
       2,

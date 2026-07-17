@@ -40,7 +40,7 @@ func TestNoteRoundTrip(t *testing.T) {
 	}
 }
 
-func TestNoteTypeRoundTripAndFactOmission(t *testing.T) {
+func TestNoteTagsRoundTripAndNoTypeLine(t *testing.T) {
 	base := Frontmatter{
 		ID:        "01JAX5D9KX3M8VYZ8T5EK5JY7C",
 		Label:     "sailing idea",
@@ -50,37 +50,39 @@ func TestNoteTypeRoundTripAndFactOmission(t *testing.T) {
 		CreatedAt: time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
 	}
 
-	// A non-default kind round-trips and appears on disk.
+	// Tags round-trip on disk; the retired `type:` line is never written.
 	idea := &Note{Frontmatter: base, Body: "try a solo overnight sail"}
-	idea.Type = TypeIdea
+	idea.Tags = []string{"idea", "sailing"}
 	data, err := idea.Serialize()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(data), "type: idea") {
-		t.Errorf("idea type not serialized:\n%s", data)
+	if strings.Contains(string(data), "type:") {
+		t.Errorf("retired type field should never be serialized:\n%s", data)
+	}
+	if !strings.Contains(string(data), "- idea") {
+		t.Errorf("tags not serialized:\n%s", data)
 	}
 	got, err := ParseNote(data)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Kind() != TypeIdea {
-		t.Errorf("kind = %q, want idea", got.Kind())
+	if strings.Join(got.Tags, ",") != "idea,sailing" {
+		t.Errorf("tags = %v, want [idea sailing]", got.Tags)
 	}
 
-	// The default kind is omitted on disk but still reads back as fact.
-	fact := &Note{Frontmatter: base, Body: "keeps a sailboat"}
-	fact.Type = TypeFact
-	data, err = fact.Serialize()
+	// A note with no tags serializes without a tags line and reads back clean.
+	plain := &Note{Frontmatter: base, Body: "keeps a sailboat"}
+	data, err = plain.Serialize()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(data), "type:") {
-		t.Errorf("fact type should be omitted on disk:\n%s", data)
+	if strings.Contains(string(data), "tags:") {
+		t.Errorf("empty tags should be omitted on disk:\n%s", data)
 	}
 	got, _ = ParseNote(data)
-	if got.Kind() != TypeFact {
-		t.Errorf("kind = %q, want fact (default)", got.Kind())
+	if len(got.Tags) != 0 {
+		t.Errorf("tags = %v, want none", got.Tags)
 	}
 }
 

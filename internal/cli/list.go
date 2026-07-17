@@ -13,7 +13,6 @@ import (
 func newListCmd() *cobra.Command {
 	var (
 		groupFilter string
-		typeFilter  string
 		showPending bool
 		showAll     bool
 	)
@@ -40,16 +39,6 @@ func newListCmd() *cobra.Command {
 			if groupFilter != "" {
 				notes = filterByGroup(notes, groupFilter)
 			}
-			if typeFilter != "" {
-				want := vault.NormalizeType(typeFilter)
-				kept := notes[:0]
-				for _, n := range notes {
-					if n.Kind() == want {
-						kept = append(kept, n)
-					}
-				}
-				notes = kept
-			}
 			if len(notes) == 0 {
 				fmt.Fprintln(cmd.OutOrStdout(), "(no notes)")
 				return nil
@@ -74,26 +63,16 @@ func newListCmd() *cobra.Command {
 			for _, g := range groups {
 				fmt.Fprintf(tw, "\n[%s]\n", g)
 				for _, n := range buckets[g] {
-					fmt.Fprintf(tw, "  %s\t%s\t%s\t%s\n", shortID(n.ID), n.Label, typeBadge(n.Kind()), tagString(n.Tags))
+					fmt.Fprintf(tw, "  %s\t%s\t%s\n", shortID(n.ID), n.Label, tagString(n.Tags))
 				}
 			}
 			return tw.Flush()
 		},
 	}
 	cmd.Flags().StringVarP(&groupFilter, "group", "g", "", "only show notes whose frontmatter group matches (prefix match)")
-	cmd.Flags().StringVarP(&typeFilter, "type", "t", "", "only show notes of this kind: `fact`, `idea`, `thought`, or `reference`")
 	cmd.Flags().BoolVar(&showPending, "pending", false, "show only pending inbox notes")
 	cmd.Flags().BoolVar(&showAll, "all", false, "show both active and pending notes")
 	return cmd
-}
-
-// typeBadge renders a note's kind for the list, blank for the default
-// fact so plain memories don't get a noisy column.
-func typeBadge(kind string) string {
-	if kind == vault.TypeFact {
-		return ""
-	}
-	return "(" + kind + ")"
 }
 
 // shortID returns the last 6 chars of a ULID — enough to disambiguate a

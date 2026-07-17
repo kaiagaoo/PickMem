@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useVault } from "../store";
 import type { Note } from "../types";
-import { EmptyState, TypeTag } from "./ui";
+import { EmptyState } from "./ui";
 
 // InboxView is the review surface for staged (pending) items. It's mostly
 // empty in v1 — but it's the exact pipeline AI-suggested memories will flow
@@ -51,7 +51,6 @@ function PendingCard({ note, onEdit }: { note: Note; onEdit: () => void }) {
     <div className="pending-card">
       <div className="pc-top">
         <span className="pc-label">{note.label}</span>
-        <TypeTag type={note.type} />
       </div>
       {note.body && <div className="pc-body">{note.body}</div>}
       <div className="pc-meta mono">source: {note.source}</div>

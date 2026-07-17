@@ -10,13 +10,11 @@ import { EmptyState } from "./ui";
 // know where it lives.
 export function SearchResults({
   query,
-  typeFilter,
   onNavNote,
   onEdit,
   onDelete,
 }: {
   query: string;
-  typeFilter: string;
   onNavNote: (id: string) => void;
   onEdit: (n: Note) => void;
   onDelete: (n: Note) => void;
@@ -27,7 +25,6 @@ export function SearchResults({
   const hits = useMemo(
     () =>
       state.notes.filter((n) => {
-        if (typeFilter && n.type !== typeFilter) return false;
         if (!q) return true;
         return (
           n.label.toLowerCase().includes(q) ||
@@ -36,13 +33,8 @@ export function SearchResults({
           n.tags.some((t) => t.toLowerCase().includes(q))
         );
       }),
-    [state.notes, q, typeFilter],
+    [state.notes, q],
   );
-
-  const criteria =
-    [q ? `“${query.trim()}”` : "", typeFilter ? `type ${typeFilter}` : ""]
-      .filter(Boolean)
-      .join(" · ") || "your filter";
 
   const hitIds = hits.map((n) => n.id);
   const pickedCount = hitIds.filter((id) => selected.has(id)).length;

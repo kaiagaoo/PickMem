@@ -39,7 +39,6 @@ export function Home({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) =
   const [nav, setNav] = useState<Nav>({ kind: "group", path: "" });
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Note | null>(null);
   const [pendingGroupDelete, setPendingGroupDelete] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<PromptState | null>(null);
@@ -53,7 +52,6 @@ export function Home({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) =
       setNav({ kind: "group", path: "" });
       setView("vault");
       setQuery("");
-      setTypeFilter("");
     }
   }, [vaultPath]);
 
@@ -122,38 +120,21 @@ export function Home({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) =
                 className="filter-input"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Filter memories…"
+                placeholder="Filter memories… (label, tag, or text)"
               />
-              <select
-                className="type-filter"
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                title="Filter by type"
-              >
-                <option value="">All types</option>
-                {state.note_types.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-              {(query || typeFilter) && (
+              {query && (
                 <button
                   className="filter-clear"
-                  onClick={() => {
-                    setQuery("");
-                    setTypeFilter("");
-                  }}
+                  onClick={() => setQuery("")}
                   title="Clear filter"
                 >
                   ✕
                 </button>
               )}
             </div>
-            {query.trim() || typeFilter ? (
+            {query.trim() ? (
               <SearchResults
                 query={query}
-                typeFilter={typeFilter}
                 onNavNote={goNote}
                 onEdit={handlers.onEditNote}
                 onDelete={handlers.onDeleteNote}
@@ -186,7 +167,7 @@ export function Home({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) =
         <ItemEditor
           note={editor.note}
           groups={state.groups}
-          noteTypes={state.note_types}
+          suggestedTags={state.suggested_tags}
           defaultGroup={editor.defaultGroup}
           onSave={(input) =>
             editor.note ? actions.editNote(editor.note.id, input) : actions.addNote(input)

@@ -42,8 +42,9 @@ export async function writeInboxNote(
     id,
     label: params.label.trim(),
     group: "",
-    // Captured page text is external material, not a personal fact.
-    type: "reference",
+    // Captured page text is external material — mark it with a `reference`
+    // tag (types were folded into tags).
+    tags: ["reference"],
     source: "extract",
     status: "pending",
     created_at: new Date().toISOString(),

@@ -17,7 +17,7 @@
 // This keeps the extension free of a full YAML dependency (js-yaml is
 // ~60KB, we don't need it).
 
-import type { Frontmatter, Note, NoteSource, NoteStatus, NoteType } from "../vault/types.ts";
+import type { Frontmatter, Note, NoteSource, NoteStatus } from "../vault/types.ts";
 
 export interface ParsedNote {
   frontmatter: Frontmatter;
@@ -144,18 +144,19 @@ function coerceFrontmatter(raw: Record<string, YAMLVal>): Frontmatter {
     status,
     created_at: s("created_at"),
   };
-  const type = normalizeType(s("type"));
-  if (type !== "fact") fm.type = type;
   const tags = arr("tags");
+  // Legacy migration: notes written before types were folded into tags carry
+  // a `type:` line. Fold a non-default type into the tag list (dropping the
+  // old "fact" default, which added no information). Matches the Go side's
+  // ParseNote migration, so both front-ends read old vaults identically.
+  const legacyType = s("type").trim();
+  if (legacyType && legacyType !== "fact" && !tags.includes(legacyType)) {
+    tags.unshift(legacyType);
+  }
   if (tags.length > 0) fm.tags = tags;
   const sg = s("suggested_group");
   if (sg) fm.suggested_group = sg;
   return fm;
-}
-
-function normalizeType(s: string): NoteType {
-  if (s === "idea" || s === "thought" || s === "reference") return s;
-  return "fact";
 }
 
 function normalizeSource(s: string): NoteSource {

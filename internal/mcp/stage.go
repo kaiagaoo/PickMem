@@ -18,9 +18,6 @@ import (
 type StageItem struct {
 	Label string `json:"label,omitempty" jsonschema:"short human-readable title; derived from the body if omitted"`
 	Body  string `json:"body" jsonschema:"the memory itself: one self-contained item, stated in third person"`
-	// Type is what kind of note this is, independent of its group. Unknown
-	// or empty defaults to fact.
-	Type string `json:"type,omitempty" jsonschema:"kind of note: fact (a stable fact, the default), idea (a proposal/concept), thought (a fleeting reflection), or reference (external material)"`
 	// SuggestedGroup must name a group that already exists in the vault —
 	// staging can't invent taxonomy. Invalid or missing values fall back
 	// to the vault's keyword routing rules, then to unrouted.
@@ -32,7 +29,6 @@ type StagedItem struct {
 	Label string `json:"label"`
 	// Outcome is "staged", "duplicate", or "skipped".
 	Outcome        string `json:"outcome"`
-	Type           string `json:"type,omitempty"`
 	SuggestedGroup string `json:"suggested_group,omitempty"`
 	// Warning explains a downgrade the model should learn from, e.g. a
 	// suggested_group that doesn't exist in the vault.
@@ -104,14 +100,9 @@ func StageMemories(s *vault.Store, items []StageItem) (StageResult, error) {
 			group = router.Suggest(context.Background(), body, KnownGroupNames(s))
 		}
 
-		// The model may only stage into the vault's known type vocabulary;
-		// an unknown/absent type falls back to fact, so staging can't invent
-		// type categories (users define those in the app, not the assistant).
-		kind := coerceKnownType(s, item.Type)
 		n := &vault.Note{
 			Frontmatter: vault.Frontmatter{
 				Label:          label,
-				Type:           kind,
 				SuggestedGroup: group,
 				Source:         vault.SourceExtract,
 			},
@@ -122,7 +113,6 @@ func StageMemories(s *vault.Store, items []StageItem) (StageResult, error) {
 		}
 		seen[h] = true
 		out.Outcome = "staged"
-		out.Type = kind
 		out.SuggestedGroup = group
 		result.Staged++
 		result.Items = append(result.Items, out)
@@ -135,17 +125,4 @@ func StageMemories(s *vault.Store, items []StageItem) (StageResult, error) {
 // unioned with note groups and rule targets — see vault.Store.KnownGroups.
 func KnownGroupNames(s *vault.Store) []string {
 	return s.KnownGroups()
-}
-
-// coerceKnownType normalizes a model-supplied type and falls back to fact if
-// it isn't in the vault's configured type vocabulary, so staging can't create
-// new type categories.
-func coerceKnownType(s *vault.Store, raw string) string {
-	kind := vault.NormalizeType(raw)
-	for _, t := range s.NoteTypes() {
-		if t == kind {
-			return kind
-		}
-	}
-	return vault.TypeFact
 }

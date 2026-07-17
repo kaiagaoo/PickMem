@@ -48,9 +48,7 @@ func (r row) matchText() string {
 	var b strings.Builder
 	b.WriteString(r.note.Label)
 	b.WriteByte(' ')
-	b.WriteString(r.note.Kind()) // so typing "idea"/"thought" filters by kind
-	b.WriteByte(' ')
-	b.WriteString(strings.Join(r.note.Tags, " "))
+	b.WriteString(strings.Join(r.note.Tags, " ")) // so typing a tag filters by it
 	b.WriteByte(' ')
 	b.WriteString(r.note.Body)
 	return b.String()

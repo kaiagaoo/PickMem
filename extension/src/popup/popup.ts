@@ -107,10 +107,15 @@ function wireButtons() {
   qs("#btn-add-toggle").addEventListener("click", () => {
     const form = qs("#add-form");
     form.classList.toggle("hidden");
-    if (!form.classList.contains("hidden")) qs<HTMLInputElement>("#add-label").focus();
+    if (!form.classList.contains("hidden")) {
+      renderAddTagChips();
+      qs<HTMLInputElement>("#add-label").focus();
+    }
   });
   qs("#btn-add-cancel").addEventListener("click", closeAddForm);
   qs("#btn-add-save").addEventListener("click", onAddNote);
+  // Keep the suggested-tag chips in sync when tags are typed by hand.
+  qs<HTMLInputElement>("#add-tags").addEventListener("input", renderAddTagChips);
 
   // Switch vault: grantVault() persists the newly-picked handle over the
   // old one, so a cancelled picker (AbortError) leaves the current vault
@@ -180,7 +185,7 @@ function renderLenses() {
   el.innerHTML = "";
   if (!state.vault) return;
   if (state.vault.lenses.length === 0) {
-    el.innerHTML = `<span class="lens-chip" style="cursor:default;color:var(--dim)">no lenses yet</span>`;
+    el.innerHTML = `<span class="lens-chip" style="cursor:default;color:var(--muted)">no lenses yet</span>`;
     return;
   }
   for (const l of state.vault.lenses) {
@@ -248,7 +253,7 @@ function renderItems() {
   const q = state.filter.trim().toLowerCase();
   const filtered = state.vault.active.filter((n) => !q || matches(n, q));
   if (filtered.length === 0) {
-    el.innerHTML = `<div class="group-header" style="color:var(--dim);text-transform:none">no matches</div>`;
+    el.innerHTML = `<div class="group-header" style="color:var(--muted);text-transform:none">no matches</div>`;
     return;
   }
   const root = buildTree(filtered);
@@ -277,39 +282,60 @@ function renderGroupHeader(node: gNode, depth: number): HTMLElement {
   row.className = "grouprow";
   row.style.paddingLeft = indentPx(depth);
   if (st !== "none") row.classList.add("selected");
-  const box = document.createElement("span");
-  box.className = "box";
-  box.textContent = st === "all" ? "[x]" : st === "some" ? "[~]" : "[ ]";
+  row.appendChild(pickCircle(st));
   const label = document.createElement("span");
   label.className = "grouplabel";
   label.textContent = node.name;
-  row.appendChild(box);
   row.appendChild(label);
   row.addEventListener("click", () => toggleGroup(ids));
   return row;
 }
 
 function renderItem(n: Note, depth: number): HTMLElement {
+  const on = state.selected.has(n.id);
   const row = document.createElement("div");
   row.className = "item";
   row.style.paddingLeft = indentPx(depth);
-  if (state.selected.has(n.id)) row.classList.add("selected");
-  const box = document.createElement("span");
-  box.className = "box";
-  box.textContent = state.selected.has(n.id) ? "[x]" : "[ ]";
+  if (on) row.classList.add("selected");
+  row.appendChild(pickCircle(on ? "all" : "none"));
+  const main = document.createElement("div");
+  main.className = "it-main";
   const label = document.createElement("span");
-  label.className = "label";
+  label.className = "it-label";
   label.textContent = n.label;
-  row.appendChild(box);
-  row.appendChild(label);
+  main.appendChild(label);
   if (n.tags && n.tags.length > 0) {
-    const tags = document.createElement("span");
-    tags.className = "tags";
-    tags.textContent = "#" + n.tags.join(" #");
-    row.appendChild(tags);
+    const tags = document.createElement("div");
+    tags.className = "it-tags";
+    for (const t of n.tags) tags.appendChild(tagChipEl(t));
+    main.appendChild(tags);
   }
+  row.appendChild(main);
   row.addEventListener("click", () => toggle(n.id));
   return row;
+}
+
+// The well-known tags that keep a distinct hue (formerly the note "types").
+const KNOWN_TAG_HUES = new Set(["fact", "idea", "thought", "reference"]);
+
+// tagChipEl renders a single tag as a colored `#name` chip, matching the
+// web app's TagChip.
+function tagChipEl(tag: string): HTMLElement {
+  const s = document.createElement("span");
+  s.className = "tag-chip" + (KNOWN_TAG_HUES.has(tag) ? ` t-${tag}` : "");
+  s.textContent = "#" + tag;
+  return s;
+}
+
+// pickCircle is the web app's pick toggle: an empty ring, a partial ring
+// (group with some picked), or a filled accent dot (picked / whole group).
+function pickCircle(st: GroupState): HTMLElement {
+  const c = document.createElement("span");
+  c.className = "pick" + (st === "all" ? " on" : st === "some" ? " some" : "");
+  const dot = document.createElement("span");
+  dot.className = "dot";
+  c.appendChild(dot);
+  return c;
 }
 
 function renderSummary() {
@@ -425,6 +451,39 @@ function closeAddForm() {
   qs<HTMLInputElement>("#add-group").value = "";
   qs<HTMLInputElement>("#add-tags").value = "";
   qs<HTMLTextAreaElement>("#add-body").value = "";
+  renderAddTagChips();
+}
+
+// The tags input is the source of truth; the chips are a quick way to
+// toggle a suggested tag in and out of it.
+function currentAddTags(): string[] {
+  return qs<HTMLInputElement>("#add-tags")
+    .value.split(",")
+    .map((t) => t.trim())
+    .filter((t) => t !== "");
+}
+
+function renderAddTagChips() {
+  const el = qs("#add-tag-chips");
+  el.innerHTML = "";
+  const suggested = state.vault?.suggestedTags ?? [];
+  const cur = new Set(currentAddTags());
+  for (const t of suggested) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "tag-suggest-chip" + (cur.has(t) ? " on" : "");
+    btn.title = cur.has(t) ? "Remove tag" : "Add tag";
+    btn.appendChild(tagChipEl(t));
+    btn.addEventListener("click", () => toggleAddTag(t));
+    el.appendChild(btn);
+  }
+}
+
+function toggleAddTag(t: string) {
+  const cur = currentAddTags();
+  const next = cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t];
+  qs<HTMLInputElement>("#add-tags").value = next.join(", ");
+  renderAddTagChips();
 }
 
 async function onAddNote() {

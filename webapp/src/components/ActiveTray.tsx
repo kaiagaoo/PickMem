@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useVault } from "../store";
 import { buildContext, pickedNotes, type CopyFormat } from "../format";
-import { PromptDialog, TokenMeter, TypeTag } from "./ui";
+import { PromptDialog, TokenMeter } from "./ui";
 
 // ActiveTray is the payoff zone: the current pick, its size, and the actions
 // that turn it into something you hand an assistant. The lens dropdown
@@ -106,7 +106,6 @@ export function ActiveTray() {
             <div className="tray-row" key={n.id}>
               <div className="tr-main">
                 <span className="tr-label">{n.label}</span>
-                <TypeTag type={n.type} />
               </div>
               <button
                 className="tr-remove"

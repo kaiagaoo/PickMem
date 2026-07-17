@@ -22,21 +22,20 @@ func TestEditNoteInPlace(t *testing.T) {
 		Label: "salary",
 		Group: "finance/income",
 		Body:  "monthly base $9k + bonus",
-		Type:  TypeIdea,
-		Tags:  []string{"money"},
+		Tags:  []string{"idea", "money"},
 	})
 	if err != nil {
 		t.Fatalf("EditNote: %v", err)
 	}
-	// Body/type/tags changed; a same-group, same-label edit keeps the file.
+	// Body/tags changed; a same-group, same-label edit keeps the file.
 	if edited.RelPath != origPath {
 		t.Errorf("in-place edit moved the file: %s -> %s", origPath, edited.RelPath)
 	}
 	if edited.Body != "monthly base $9k + bonus" {
 		t.Errorf("body not updated: %q", edited.Body)
 	}
-	if edited.Kind() != TypeIdea {
-		t.Errorf("type not updated: %q", edited.Kind())
+	if strings.Join(edited.Tags, ",") != "idea,money" {
+		t.Errorf("tags not updated: %v", edited.Tags)
 	}
 
 	// Re-open from disk to prove the write landed.
@@ -49,8 +48,8 @@ func TestEditNoteInPlace(t *testing.T) {
 		t.Fatal("edited note missing after reopen")
 	}
 	// Parsed bodies keep a trailing newline (existing round-trip behavior).
-	if strings.TrimSpace(got.Body) != "monthly base $9k + bonus" || got.Kind() != TypeIdea {
-		t.Errorf("on-disk note not updated: body=%q type=%q", got.Body, got.Kind())
+	if strings.TrimSpace(got.Body) != "monthly base $9k + bonus" || strings.Join(got.Tags, ",") != "idea,money" {
+		t.Errorf("on-disk note not updated: body=%q tags=%v", got.Body, got.Tags)
 	}
 }
 

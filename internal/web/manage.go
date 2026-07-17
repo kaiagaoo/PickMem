@@ -68,12 +68,12 @@ func (s *Server) handleDeleteGroup(w http.ResponseWriter, r *http.Request) {
 	s.writeState(w)
 }
 
-// handleSetNoteTypes persists the vault's type vocabulary into config.json.
-// The store normalizes the list (fact guaranteed, de-duped) on read, so we
-// just store what the client sends.
-func (s *Server) handleSetNoteTypes(w http.ResponseWriter, r *http.Request) {
+// handleSetSuggestedTags persists the vault's quick-pick tag chips into
+// config.json. The store normalizes the list (de-duped) on read, so we just
+// store what the client sends.
+func (s *Server) handleSetSuggestedTags(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Types []string `json:"types"`
+		Tags []string `json:"tags"`
 	}
 	if !decode(w, r, &req) {
 		return
@@ -83,25 +83,9 @@ func (s *Server) handleSetNoteTypes(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	cfg.NoteTypes = req.Types
+	cfg.SuggestedTags = req.Tags
 	if err := s.store.SaveConfig(cfg); err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	s.writeState(w)
-}
-
-// handleRenameNoteType renames a type and updates every note using it.
-func (s *Server) handleRenameNoteType(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		From string `json:"from"`
-		To   string `json:"to"`
-	}
-	if !decode(w, r, &req) {
-		return
-	}
-	if _, err := s.store.RenameNoteType(req.From, req.To); err != nil {
-		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	s.writeState(w)

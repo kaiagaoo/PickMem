@@ -12,12 +12,11 @@ import (
 // NoteEdit carries the mutable fields a management UI (the web app or a
 // future CLI editor) may change on an existing active note. Callers send the
 // full desired value of each field, not a delta: Label/Group/Body replace
-// outright, Type is normalized, and Tags replaces the whole slice.
+// outright, and Tags replaces the whole slice.
 type NoteEdit struct {
 	Label string
 	Group string
 	Body  string
-	Type  string
 	Tags  []string
 }
 
@@ -67,7 +66,6 @@ func (s *Store) EditNote(id string, e NoteEdit) (*Note, error) {
 	updated.Label = e.Label
 	updated.Group = e.Group
 	updated.Body = e.Body
-	updated.Type = NormalizeType(e.Type)
 	if len(e.Tags) == 0 {
 		updated.Tags = nil
 	} else {

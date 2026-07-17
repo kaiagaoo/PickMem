@@ -1,5 +1,5 @@
 import type { Note } from "../types";
-import { PickToggle, TypeTag } from "./ui";
+import { PickToggle, TagChip } from "./ui";
 
 // MemoryCard is the core object of the app — one memory as an index card.
 // Clicking the card (or its toggle) picks/unpicks it; picking is the
@@ -46,15 +46,12 @@ export function MemoryCard({
           >
             {note.label}
           </button>
-          <TypeTag type={note.type} />
         </div>
         {note.body && <div className="mc-body">{note.body}</div>}
         {note.tags.length > 0 && (
           <div className="mc-tags">
             {note.tags.map((t) => (
-              <span key={t} className="mc-tag">
-                #{t}
-              </span>
+              <TagChip key={t} tag={t} />
             ))}
           </div>
         )}

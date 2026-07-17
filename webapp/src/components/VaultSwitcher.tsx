@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useVault } from "../store";
+import { pickFolder } from "../api";
 import { Modal } from "./ui";
 
 type Dialog = "open" | "create" | "import" | null;
@@ -87,7 +88,25 @@ function VaultDialog({ kind, onClose }: { kind: Exclude<Dialog, null>; onClose: 
   const [blob, setBlob] = useState<unknown | null>(null);
   const [blobName, setBlobName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [browsing, setBrowsing] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // browse pops the OS folder chooser (server-side) and drops the chosen
+  // absolute path into the field. A cancel yields "" and leaves it alone; a
+  // failure (e.g. no picker on this OS) just surfaces as a hint — the text
+  // field still works for typing a path by hand.
+  const browse = async () => {
+    setErr(null);
+    setBrowsing(true);
+    try {
+      const picked = await pickFolder();
+      if (picked) setPath(picked);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBrowsing(false);
+    }
+  };
 
   const titles = {
     open: "Open a folder as a vault",
@@ -162,12 +181,22 @@ function VaultDialog({ kind, onClose }: { kind: Exclude<Dialog, null>; onClose: 
         <span>
           {kind === "open" ? "Folder path" : "New folder path (created if missing)"}
         </span>
-        <input
-          autoFocus
-          value={path}
-          onChange={(e) => setPath(e.target.value)}
-          placeholder="~/vaults/work"
-        />
+        <div className="path-row">
+          <input
+            autoFocus
+            value={path}
+            onChange={(e) => setPath(e.target.value)}
+            placeholder="~/vaults/work"
+          />
+          <button
+            type="button"
+            className="ghost path-browse"
+            onClick={browse}
+            disabled={browsing || busy}
+          >
+            {browsing ? "Choosing…" : "Browse…"}
+          </button>
+        </div>
       </label>
       {kind !== "open" && (
         <label className="field">

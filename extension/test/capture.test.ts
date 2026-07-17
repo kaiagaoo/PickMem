@@ -56,7 +56,7 @@ test("writeInboxNote stages a pending/extract note the CLI can parse", async () 
   assert.equal(parsed.frontmatter.status, "pending");
   assert.equal(parsed.frontmatter.source, "extract");
   assert.equal(parsed.frontmatter.group, "");
-  assert.equal(parsed.frontmatter.type, "reference"); // captured web text
+  assert.deepEqual(parsed.frontmatter.tags, ["reference"]); // captured web text
   assert.equal(parsed.frontmatter.suggested_group, "about/preferences");
   assert.match(parsed.body, /prefers tabs/);
   assert.match(parsed.body, /Source: ChatGPT/);

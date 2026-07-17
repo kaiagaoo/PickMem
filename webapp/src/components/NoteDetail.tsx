@@ -1,7 +1,7 @@
 import { useVault } from "../store";
 import type { Note } from "../types";
 import { crumbs } from "../treeutil";
-import { PickToggle, TypeTag, EmptyState } from "./ui";
+import { PickToggle, TagChip, EmptyState } from "./ui";
 
 // NoteDetail is the main pane for a selected note: a read view with its
 // breadcrumb, body, tags, and pick/edit/delete actions. Editing opens the
@@ -50,7 +50,6 @@ export function NoteDetail({
       <div className="nd-head">
         <PickToggle on={picked} onClick={() => actions.toggleNote(note.id)} label={note.label} />
         <h1 className="nd-title">{note.label}</h1>
-        <TypeTag type={note.type} />
       </div>
 
       <div className="nd-body">{note.body || <span className="muted">No content yet.</span>}</div>
@@ -58,15 +57,13 @@ export function NoteDetail({
       {note.tags.length > 0 && (
         <div className="nd-tags">
           {note.tags.map((t) => (
-            <span key={t} className="mc-tag">
-              #{t}
-            </span>
+            <TagChip key={t} tag={t} />
           ))}
         </div>
       )}
 
       <div className="nd-meta mono">
-        {note.type} · {note.group} · {note.source}
+        {note.group} · {note.source}
       </div>
 
       <div className="nd-actions">
