@@ -109,6 +109,8 @@ The app opens at `http://127.0.0.1:4577`. A brand-new vault greets you with a sh
 
 <p align="center"><img src="docs/images/ext-popup.png" width="380" alt="PickMem Chrome extension popup — lenses, pickable memory tree, Insert button"></p>
 
+If you installed via the one-liner, download **`pickmem-extension_<version>.zip`** from the [latest release](https://github.com/kaiagaoo/PickMem/releases/latest), unzip it, then in Chrome open `chrome://extensions` → enable **Developer mode** → **Load unpacked** → pick the unzipped folder. From a clone, build it instead:
+
 ```bash
 cd extension && npm install && npm run build
 #   then load extension/dist/ via chrome://extensions → Load unpacked

@@ -25,6 +25,21 @@ jobs:
           # Track the version declared in go.mod so CI never drifts from local.
           go-version-file: go.mod
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Build the Chrome extension and zip it so install-script users (who
+      # don't clone the repo) can download and "Load unpacked" it. dist/ and
+      # node_modules/ are gitignored, so this leaves the tree clean for
+      # GoReleaser's dirty-state check.
+      - name: Build & package Chrome extension
+        run: |
+          npm --prefix extension ci
+          npm --prefix extension run build
+          (cd extension/dist && zip -qr "$GITHUB_WORKSPACE/pickmem-extension_${{ github.ref_name }}.zip" .)
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:

@@ -15,3 +15,6 @@
 # Extension build artifacts (source is committed; dist/ and node_modules/ are not)
 extension/node_modules/
 extension/dist/
+# The zipped extension the release workflow builds and attaches to the Release
+# (kept out of git so it doesn't dirty the tree for GoReleaser).
+/pickmem-extension_*.zip

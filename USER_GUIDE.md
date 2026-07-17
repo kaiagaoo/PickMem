@@ -262,7 +262,11 @@ The **Settings** screen (left sidebar) has:
 
 The extension inserts your pick directly into the chat box on ChatGPT, Claude.ai, and Gemini, with a clipboard fallback everywhere else. It reads the same vault as the web app.
 
-**Build and load:**
+The extension isn't part of the `pickmem` binary — it's a separate folder you "Load unpacked" into Chrome. There are two ways to get that folder.
+
+**If you installed via the one-line script** (no clone): download **`pickmem-extension_<version>.zip`** from the [latest release](https://github.com/kaiagaoo/PickMem/releases/latest) and unzip it — the unzipped folder is what you load.
+
+**If you cloned the repo**, build it:
 
 ```bash
 cd extension/
@@ -270,7 +274,7 @@ npm install
 npm run build          # writes extension/dist/
 ```
 
-In Chrome: open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select `extension/dist/`.
+Then in Chrome: open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select the folder — the unzipped release folder, or `extension/dist/` from a clone.
 
 **Connect your vault.** Click the PickMem toolbar icon. First run shows **"Choose vault folder…"** — grant access to the same folder you `init`-ed (via the browser's File System Access API). Chrome remembers the grant. The popup shows the vault name with a **switch** button and an **inbox N** badge when captures are waiting.
 

@@ -71,3 +71,8 @@ changelog:
 release:
   draft: false
   prerelease: auto
+  # Attach the built Chrome extension (zipped in the release workflow) to the
+  # GitHub Release, so users who installed via the one-line script can load it
+  # without cloning and building the repo.
+  extra_files:
+    - glob: ./pickmem-extension_*.zip
