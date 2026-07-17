@@ -135,7 +135,9 @@ elif ! command -v unzip >/dev/null 2>&1; then
 else
   EXT_ASSET="pickmem-extension_${TAG}.zip"
   say ""
-  say "Downloading $EXT_ASSET…"
+  # Brace the var: a bare "$EXT_ASSET…" lets some shells/locales fold the
+  # multibyte ellipsis bytes into the variable name -> unbound-variable abort.
+  say "Downloading ${EXT_ASSET}…"
   if curl -fsSL "$BASE/$EXT_ASSET" -o "$TMP/$EXT_ASSET" 2>/dev/null; then
     # Fresh dir each time so an old build can't leave stale files behind.
     rm -rf "$EXT_DIR"
