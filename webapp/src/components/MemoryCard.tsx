@@ -9,12 +9,14 @@ export function MemoryCard({
   note,
   picked,
   onToggle,
+  onOpen,
   onEdit,
   onDelete,
 }: {
   note: Note;
   picked: boolean;
   onToggle: () => void;
+  onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -34,7 +36,16 @@ export function MemoryCard({
       <PickToggle on={picked} onClick={onToggle} label={note.label} />
       <div className="mc-main">
         <div className="mc-top">
-          <span className="mc-label">{note.label}</span>
+          <button
+            className="mc-label"
+            title="Open"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpen();
+            }}
+          >
+            {note.label}
+          </button>
           <TypeTag type={note.type} />
         </div>
         {note.body && <div className="mc-body">{note.body}</div>}

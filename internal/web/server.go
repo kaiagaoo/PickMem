@@ -64,6 +64,10 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/export", s.withVault(s.handleExport))
 	s.mux.HandleFunc("POST /api/import", s.withVault(s.handleImport))
 	s.mux.HandleFunc("POST /api/vault/clear", s.withVault(s.handleClearVault))
+	s.mux.HandleFunc("POST /api/vaults/switch", s.withLock(s.handleSwitchVault))
+	s.mux.HandleFunc("POST /api/vaults/create", s.withLock(s.handleCreateVault))
+	s.mux.HandleFunc("POST /api/vaults/import", s.withLock(s.handleImportVaultAsNew))
+	s.mux.HandleFunc("POST /api/vaults/forget", s.withVault(s.handleForgetVault))
 
 	// Everything else: the embedded SPA, with a fallback to index.html so
 	// client-side navigation works.

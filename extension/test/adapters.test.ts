@@ -10,6 +10,8 @@ test("adapters recognize their canonical hosts", () => {
     ["claude.ai", "Claude.ai"],
     ["www.claude.ai", "Claude.ai"],
     ["gemini.google.com", "Gemini"],
+    ["heycosmo.ai", "Cosmo"],
+    ["www.heycosmo.ai", "Cosmo"],
   ];
   for (const [host, wanted] of cases) {
     const a = currentAdapter(host);
@@ -24,13 +26,14 @@ test("unrelated hosts get no adapter", () => {
   }
 });
 
-test("registry contains exactly the three shipped adapters", () => {
+test("registry contains exactly the shipped adapters", () => {
   // Locks the spec: EXECUTION.md §M5 says "Ship adapters for ChatGPT,
-  // Claude.ai, Gemini first." Adding a fourth requires updating this
-  // test — makes scope creep visible in PRs.
-  assert.equal(ADAPTERS.length, 3);
+  // Claude.ai, Gemini first." Cosmo (heycosmo.ai) was added afterward.
+  // Adding another requires updating this test — makes scope creep
+  // visible in PRs.
+  assert.equal(ADAPTERS.length, 4);
   const names = ADAPTERS.map((a) => a.name).sort();
-  assert.deepEqual(names, ["ChatGPT", "Claude.ai", "Gemini"]);
+  assert.deepEqual(names, ["ChatGPT", "Claude.ai", "Cosmo", "Gemini"]);
 });
 
 test("matchesLocation is symmetric with currentAdapter", () => {
@@ -41,6 +44,8 @@ test("matchesLocation is symmetric with currentAdapter", () => {
         ? "chatgpt.com"
         : a.name === "Claude.ai"
         ? "claude.ai"
+        : a.name === "Cosmo"
+        ? "heycosmo.ai"
         : "gemini.google.com";
     assert.ok(
       matchesLocation(a, anyHost),

@@ -80,4 +80,19 @@ export const api = {
     if (!res.ok) throw new Error(`export failed: ${res.status}`);
     return res.json();
   },
+
+  switchVault: (path: string) =>
+    request("/vaults/switch", { method: "POST", body: JSON.stringify({ path }) }),
+
+  createVault: (path: string, name: string) =>
+    request("/vaults/create", { method: "POST", body: JSON.stringify({ path, name }) }),
+
+  importVaultAsNew: (path: string, name: string, vault: unknown) =>
+    request("/vaults/import", {
+      method: "POST",
+      body: JSON.stringify({ path, name, vault }),
+    }),
+
+  forgetVault: (path: string) =>
+    request("/vaults/forget", { method: "POST", body: JSON.stringify({ path }) }),
 };

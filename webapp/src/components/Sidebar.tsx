@@ -1,63 +1,49 @@
 import { useVault } from "../store";
-import type { View } from "../types";
-import { GroupTree } from "./GroupTree";
+import type { Nav, View } from "../types";
+import { VaultSwitcher } from "./VaultSwitcher";
+import { VaultTree, type TreeHandlers } from "./VaultTree";
 
-// Sidebar is the left navigation zone: groups (filter the vault), lenses
-// (activate), inbox (with count), settings, and the inert Suggestions seam
-// where AI-extracted candidates will land later.
+// Sidebar is the left navigation zone: the vault switcher, the full
+// Obsidian-style tree (groups → note titles), then lenses, inbox, settings,
+// and the inert Suggestions seam.
 export function Sidebar({
   view,
   setView,
-  groupFilter,
-  setGroupFilter,
-  onRenameGroup,
-  onDeleteGroup,
-  onAddInGroup,
+  nav,
+  handlers,
 }: {
   view: View;
   setView: (v: View) => void;
-  groupFilter: string | null;
-  setGroupFilter: (g: string | null) => void;
-  onRenameGroup: (path: string) => void;
-  onDeleteGroup: (path: string) => void;
-  onAddInGroup: (path: string) => void;
+  nav: Nav;
+  handlers: TreeHandlers;
 }) {
   const { state, selected, actions } = useVault();
   const activeLens = state.active.active_lens;
 
   return (
     <nav className="sidebar">
-      <div className="sb-brand">
-        <span className="pin">📌</span>
-        <span className="sb-name">{state.vault_name || "PickMem"}</span>
-      </div>
+      <VaultSwitcher />
 
-      <div className="sb-section">
-        <div className="sb-heading">Groups</div>
-        <GroupTree
+      <div className="sb-section grow">
+        <div className="sb-heading">
+          Vault
+          <button className="link right" onClick={() => handlers.onNewSubgroup("")}>
+            + group
+          </button>
+        </div>
+        <VaultTree
           groups={state.groups}
           notes={state.notes}
-          selected={view === "vault" ? groupFilter : null}
           picked={selected}
-          onSelect={(g) => {
-            setGroupFilter(g);
-            setView("vault");
-          }}
-          onToggleSubtree={actions.toggleGroup}
-          onRename={onRenameGroup}
-          onDelete={onDeleteGroup}
-          onAddHere={onAddInGroup}
+          nav={view === "vault" ? nav : { kind: "group", path: "__none__" }}
+          {...handlers}
         />
       </div>
 
       <div className="sb-section">
         <div className="sb-heading">
           Lenses
-          <button
-            className="link right"
-            onClick={() => setView("lenses")}
-            title="Manage lenses"
-          >
+          <button className="link right" onClick={() => setView("lenses")}>
             manage
           </button>
         </div>

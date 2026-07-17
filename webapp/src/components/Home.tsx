@@ -1,57 +1,142 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useVault } from "../store";
-import type { Note, View } from "../types";
+import type { Nav, Note, View } from "../types";
 import { Sidebar } from "./Sidebar";
-import { VaultView } from "./VaultView";
+import { GroupView } from "./GroupView";
+import { NoteDetail } from "./NoteDetail";
 import { ActiveTray } from "./ActiveTray";
 import { InboxView } from "./InboxView";
 import { LensManager } from "./LensManager";
 import { SettingsView, type Theme } from "./SettingsView";
 import { Suggestions } from "./Suggestions";
 import { ItemEditor } from "./ItemEditor";
-import { ConfirmDialog } from "./ui";
+import { ConfirmDialog, PromptDialog } from "./ui";
+import type { TreeHandlers } from "./VaultTree";
 
 interface EditorState {
   note: Note | null;
   defaultGroup?: string;
 }
 
-// Home is the three-zone shell: navigate (left) · browse & pick (center) ·
-// active memory (right). The tray shows only on the vault view; other views
-// take the full center width.
-export function Home({
-  theme,
-  setTheme,
-}: {
-  theme: Theme;
-  setTheme: (t: Theme) => void;
-}) {
+interface PromptState {
+  title: string;
+  label: string;
+  defaultValue?: string;
+  placeholder?: string;
+  confirmLabel?: string;
+  options?: string[];
+  validate?: (v: string) => string | null;
+  onSubmit: (value: string) => void;
+}
+
+// Home is the three-zone shell: navigate (left tree) · browse & pick
+// (drill-down center) · active memory (right). The tray shows on the vault
+// browser; other views take the full center width.
+export function Home({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) => void }) {
   const { state, actions } = useVault();
   const [view, setView] = useState<View>("vault");
-  const [groupFilter, setGroupFilter] = useState<string | null>(null);
+  const [nav, setNav] = useState<Nav>({ kind: "group", path: "" });
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Note | null>(null);
   const [pendingGroupDelete, setPendingGroupDelete] = useState<string | null>(null);
+  const [prompt, setPrompt] = useState<PromptState | null>(null);
 
-  const renameGroup = (path: string) => {
-    const next = window.prompt(`Rename group “${path}” to:`, path);
-    if (next && next.trim() && next.trim() !== path) {
-      void actions.renameGroup(path, next.trim());
+  // Reset navigation to the root when the vault changes underneath us.
+  const vaultPath = state.vault_path;
+  const prevVault = useRef(vaultPath);
+  useEffect(() => {
+    if (prevVault.current !== vaultPath) {
+      prevVault.current = vaultPath;
+      setNav({ kind: "group", path: "" });
+      setView("vault");
     }
+  }, [vaultPath]);
+
+  const goGroup = (path: string) => {
+    setNav({ kind: "group", path });
+    setView("vault");
   };
+  const goNote = (id: string) => {
+    setNav({ kind: "note", id });
+    setView("vault");
+  };
+
+  const newSubgroup = (parent: string) => {
+    setPrompt({
+      title: parent ? `New subgroup in ${parent}` : "New group",
+      label: parent ? `Name of the subgroup under “${parent}”` : "Group name",
+      placeholder: parent ? "e.g. income" : "e.g. finance/income",
+      confirmLabel: "Create",
+      onSubmit: (name) => {
+        const path = parent ? `${parent}/${name}` : name;
+        void actions.createGroup(path).then(() => goGroup(path));
+      },
+    });
+  };
+  const renameGroup = (path: string) => {
+    setPrompt({
+      title: "Rename group",
+      label: `New name for “${path}”`,
+      defaultValue: path,
+      confirmLabel: "Rename",
+      validate: (v) => (v === path ? "That's the same name." : null),
+      onSubmit: (to) => {
+        void actions.renameGroup(path, to).then(() => {
+          if (nav.kind === "group" && (nav.path === path || nav.path.startsWith(path + "/"))) {
+            goGroup(to + nav.path.slice(path.length));
+          }
+        });
+      },
+    });
+  };
+  const moveNote = (n: Note) => {
+    setPrompt({
+      title: `Move “${n.label}”`,
+      label: "Destination group",
+      defaultValue: n.group,
+      placeholder: "finance/income",
+      confirmLabel: "Move",
+      options: state.groups,
+      validate: (v) => (v === n.group ? "It's already in that group." : null),
+      onSubmit: (to) => {
+        void actions.editNote(n.id, {
+          label: n.label,
+          group: to,
+          body: n.body,
+          type: n.type,
+          tags: n.tags,
+        });
+      },
+    });
+  };
+
   const groupNoteCount = (path: string) =>
     state.notes.filter((n) => n.group === path || n.group.startsWith(path + "/")).length;
+
+  const handlers: TreeHandlers = {
+    onNavGroup: goGroup,
+    onNavNote: goNote,
+    onToggleSubtree: actions.toggleGroup,
+    onToggleNote: actions.toggleNote,
+    onNewSubgroup: newSubgroup,
+    onAddNote: (g) => {
+      setView("vault");
+      setEditor({ note: null, defaultGroup: g });
+    },
+    onRenameGroup: renameGroup,
+    onDeleteGroup: (p) => setPendingGroupDelete(p),
+    onEditNote: (n) => setEditor({ note: n }),
+    onDeleteNote: (n) => setPendingDelete(n),
+    onMoveNote: moveNote,
+  };
 
   const center = () => {
     switch (view) {
       case "vault":
-        return (
-          <VaultView
-            groupFilter={groupFilter}
-            onAdd={(g) => setEditor({ note: null, defaultGroup: g })}
-            onEdit={(n) => setEditor({ note: n })}
-            onDelete={(n) => setPendingDelete(n)}
-          />
+        return nav.kind === "note" ? (
+          <NoteDetail id={nav.id} onNavGroup={goGroup} onEdit={handlers.onEditNote} onDelete={handlers.onDeleteNote} />
+        ) : (
+          <GroupView path={nav.path} h={handlers} />
         );
       case "inbox":
         return <InboxView onEdit={(n) => setEditor({ note: n })} />;
@@ -66,18 +151,7 @@ export function Home({
 
   return (
     <div className={`home ${view === "vault" ? "with-tray" : ""}`}>
-      <Sidebar
-        view={view}
-        setView={setView}
-        groupFilter={groupFilter}
-        setGroupFilter={setGroupFilter}
-        onRenameGroup={renameGroup}
-        onDeleteGroup={(p) => setPendingGroupDelete(p)}
-        onAddInGroup={(g) => {
-          setView("vault");
-          setEditor({ note: null, defaultGroup: g });
-        }}
-      />
+      <Sidebar view={view} setView={setView} nav={nav} handlers={handlers} />
       <main className="home-main">{center()}</main>
       {view === "vault" && <ActiveTray />}
 
@@ -101,11 +175,15 @@ export function Home({
           confirmLabel="Delete"
           message={
             <>
-              Delete <strong>{pendingDelete.label}</strong>? This removes the
-              note file from your vault.
+              Delete <strong>{pendingDelete.label}</strong>? This removes the note file.
             </>
           }
-          onConfirm={() => actions.deleteNote(pendingDelete.id)}
+          onConfirm={() => {
+            const g = pendingDelete.group;
+            const delId = pendingDelete.id;
+            void actions.deleteNote(delId);
+            if (nav.kind === "note" && nav.id === delId) goGroup(g);
+          }}
           onClose={() => setPendingDelete(null)}
         />
       )}
@@ -118,8 +196,7 @@ export function Home({
           typeToConfirm={groupNoteCount(pendingGroupDelete) > 0 ? "DELETE" : undefined}
           message={
             <>
-              Delete <strong className="mono">{pendingGroupDelete}</strong> and its
-              subgroups?{" "}
+              Delete <strong className="mono">{pendingGroupDelete}</strong> and its subgroups?{" "}
               {groupNoteCount(pendingGroupDelete) > 0 ? (
                 <>
                   This removes{" "}
@@ -134,8 +211,28 @@ export function Home({
               )}
             </>
           }
-          onConfirm={() => actions.deleteGroup(pendingGroupDelete)}
+          onConfirm={() => {
+            const p = pendingGroupDelete;
+            void actions.deleteGroup(p);
+            if (nav.kind === "group" && (nav.path === p || nav.path.startsWith(p + "/"))) {
+              goGroup("");
+            }
+          }}
           onClose={() => setPendingGroupDelete(null)}
+        />
+      )}
+
+      {prompt && (
+        <PromptDialog
+          title={prompt.title}
+          label={prompt.label}
+          defaultValue={prompt.defaultValue}
+          placeholder={prompt.placeholder}
+          confirmLabel={prompt.confirmLabel}
+          options={prompt.options}
+          validate={prompt.validate}
+          onSubmit={prompt.onSubmit}
+          onClose={() => setPrompt(null)}
         />
       )}
     </div>

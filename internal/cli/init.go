@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/kaiagaoo/PickMem/internal/userconf"
 	"github.com/kaiagaoo/PickMem/internal/vault"
 	"github.com/kaiagaoo/PickMem/templates"
 	"github.com/spf13/cobra"
@@ -69,8 +70,9 @@ func newInitCmd() *cobra.Command {
 				}
 			}
 
-			// Remember this vault so daily commands don't need --vault.
-			if err := SaveUserConfig(UserConfig{VaultPath: target}); err != nil {
+			// Remember this vault so daily commands don't need --vault, and
+			// add it to the recent-vaults list for the web switcher.
+			if err := userconf.SetCurrent(target); err != nil {
 				return fmt.Errorf("save user config: %w", err)
 			}
 

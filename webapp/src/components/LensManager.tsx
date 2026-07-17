@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useVault } from "../store";
 import type { View } from "../types";
-import { EmptyState } from "./ui";
+import { EmptyState, PromptDialog } from "./ui";
 
 // LensManager lists saved lenses with membership counts and per-lens actions:
 // activate, rename, duplicate, delete. "Edit membership" activates the lens
@@ -8,13 +9,12 @@ import { EmptyState } from "./ui";
 export function LensManager({ setView }: { setView: (v: View) => void }) {
   const { state, actions } = useVault();
   const activeLens = state.active.active_lens;
+  const [renaming, setRenaming] = useState<string | null>(null);
 
-  const rename = async (name: string) => {
-    const next = prompt(`Rename lens “${name}” to:`, name);
-    if (!next || !next.trim() || next.trim() === name) return;
+  const doRename = async (name: string, next: string) => {
     const lens = state.lenses.find((l) => l.name === name);
     if (!lens) return;
-    await actions.saveLens(next.trim(), lens.item_ids);
+    await actions.saveLens(next, lens.item_ids);
     await actions.deleteLens(name);
   };
 
@@ -63,7 +63,7 @@ export function LensManager({ setView }: { setView: (v: View) => void }) {
                 >
                   Edit membership
                 </button>
-                <button className="ghost" onClick={() => rename(l.name)}>
+                <button className="ghost" onClick={() => setRenaming(l.name)}>
                   Rename
                 </button>
                 <button className="ghost" onClick={() => duplicate(l.name)}>
@@ -76,6 +76,18 @@ export function LensManager({ setView }: { setView: (v: View) => void }) {
             </div>
           ))}
         </div>
+      )}
+
+      {renaming && (
+        <PromptDialog
+          title="Rename lens"
+          label={`New name for “${renaming}”`}
+          defaultValue={renaming}
+          confirmLabel="Rename"
+          validate={(v) => (v === renaming ? "That's the same name." : null)}
+          onSubmit={(next) => void doRename(renaming, next)}
+          onClose={() => setRenaming(null)}
+        />
       )}
     </div>
   );

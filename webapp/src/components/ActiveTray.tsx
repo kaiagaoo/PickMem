@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useVault } from "../store";
 import { buildContext, pickedNotes, type CopyFormat } from "../format";
-import { TokenMeter, TypeTag } from "./ui";
+import { PromptDialog, TokenMeter, TypeTag } from "./ui";
 
 // ActiveTray is the payoff zone: the current pick, its size, and the actions
 // that turn it into something you hand an assistant. The lens dropdown
@@ -16,6 +16,7 @@ export function ActiveTray() {
   const [copied, setCopied] = useState(false);
   const [newLensName, setNewLensName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [savingAsNew, setSavingAsNew] = useState(false);
 
   // Has the pick diverged from the lens it claims to be?
   const dirty = useMemo(() => {
@@ -87,16 +88,7 @@ export function ActiveTray() {
               Update lens
             </button>
             <span className="sep">·</span>
-            <button
-              className="link"
-              onClick={() => {
-                const name = prompt("Name for the new lens:");
-                if (name && name.trim())
-                  actions
-                    .saveLens(name.trim(), state.active.item_ids)
-                    .then(() => actions.useLens(name.trim()));
-              }}
-            >
+            <button className="link" onClick={() => setSavingAsNew(true)}>
               Save as new
             </button>
           </div>
@@ -172,6 +164,19 @@ export function ActiveTray() {
           Clear pick
         </button>
       </div>
+
+      {savingAsNew && (
+        <PromptDialog
+          title="Save as a new lens"
+          label="Lens name"
+          placeholder="e.g. Advice mode"
+          confirmLabel="Save lens"
+          onSubmit={(name) =>
+            void actions.saveLens(name, state.active.item_ids).then(() => actions.useLens(name))
+          }
+          onClose={() => setSavingAsNew(false)}
+        />
+      )}
     </aside>
   );
 }

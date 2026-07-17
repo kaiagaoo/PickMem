@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "PickMem",
   "version": "0.1.0",
-  "description": "Pick which memory items your web LLM sees. Reads a local Obsidian-backed vault; injects into ChatGPT, Claude.ai, and Gemini.",
+  "description": "Pick which memory items your web LLM sees. Reads a local Obsidian-backed vault; injects into ChatGPT, Claude.ai, Gemini, and Cosmo.",
 
   "action": {
     "default_title": "PickMem",
@@ -32,7 +32,9 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*",
         "https://claude.ai/*",
-        "https://gemini.google.com/*"
+        "https://gemini.google.com/*",
+        "https://heycosmo.ai/*",
+        "https://www.heycosmo.ai/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
@@ -61,6 +63,8 @@
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
     "https://claude.ai/*",
-    "https://gemini.google.com/*"
+    "https://gemini.google.com/*",
+    "https://heycosmo.ai/*",
+    "https://www.heycosmo.ai/*"
   ]
 }

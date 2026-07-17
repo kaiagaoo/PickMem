@@ -58,17 +58,18 @@ type activeDTO struct {
 // stateDTO is the single bootstrap payload the SPA loads and re-loads after
 // every mutation, so the whole client is a pure function of one fetch.
 type stateDTO struct {
-	VaultPath string    `json:"vault_path"`
-	VaultName string    `json:"vault_name"`
-	Notes     []noteDTO `json:"notes"`
-	Pending   []noteDTO `json:"pending"`
-	Groups    []string  `json:"groups"`
-	Lenses    []lensDTO `json:"lenses"`
-	Active    activeDTO `json:"active"`
-	Context   string    `json:"context"`
-	Tokens    int       `json:"tokens"`
-	NoteTypes []string  `json:"note_types"`
-	Warnings  []string  `json:"warnings"`
+	VaultPath string        `json:"vault_path"`
+	VaultName string        `json:"vault_name"`
+	Notes     []noteDTO     `json:"notes"`
+	Pending   []noteDTO     `json:"pending"`
+	Groups    []string      `json:"groups"`
+	Lenses    []lensDTO     `json:"lenses"`
+	Active    activeDTO     `json:"active"`
+	Context   string        `json:"context"`
+	Tokens    int           `json:"tokens"`
+	NoteTypes []string      `json:"note_types"`
+	Warnings  []string      `json:"warnings"`
+	Vaults    []vaultRefDTO `json:"vaults"`
 }
 
 // buildState assembles the full client state from the store. The store is
@@ -137,5 +138,6 @@ func buildState(s *vault.Store) (stateDTO, error) {
 		Tokens:    picker.EstimateTokens(bodies),
 		NoteTypes: []string{vault.TypeFact, vault.TypeIdea, vault.TypeThought, vault.TypeReference},
 		Warnings:  s.Warnings(),
+		Vaults:    recentVaultRefs(s.Root),
 	}, nil
 }

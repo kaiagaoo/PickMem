@@ -60,7 +60,21 @@ const gemini: Adapter = {
   kind: "contenteditable",
 };
 
-export const ADAPTERS: Adapter[] = [chatgpt, claude, gemini];
+const cosmo: Adapter = {
+  name: "Cosmo",
+  // Matches the apex heycosmo.ai and any subdomain (www.heycosmo.ai).
+  urlPattern: /(?:^|\.)heycosmo\.ai$/i,
+  // Cosmo's prompt composer is a plain <textarea id="prompt-command-composer">
+  // — no rich-text framework, so the native textarea path handles it. Fall
+  // back to the placeholder text, then any textarea, if the id ever changes.
+  findInput: () =>
+    document.querySelector("#prompt-command-composer") ??
+    document.querySelector('textarea[placeholder*="Cosmo" i]') ??
+    document.querySelector("textarea"),
+  kind: "textarea",
+};
+
+export const ADAPTERS: Adapter[] = [chatgpt, claude, gemini, cosmo];
 
 /** Find the adapter for the current page, or null if none matches. */
 export function currentAdapter(host: string = location.host): Adapter | null {

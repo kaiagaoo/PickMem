@@ -25,9 +25,17 @@ export interface Active {
   item_ids: string[];
 }
 
+export interface VaultRef {
+  path: string;
+  name: string;
+  exists: boolean;
+  current: boolean;
+}
+
 export interface State {
   vault_path: string;
   vault_name: string;
+  vaults: VaultRef[];
   notes: Note[];
   pending: Note[];
   groups: string[];
@@ -50,3 +58,19 @@ export interface NoteInput {
 
 // A view is a center-pane screen selected from the left sidebar.
 export type View = "vault" | "inbox" | "lenses" | "settings" | "suggestions";
+
+// Nav is the current location within the vault browser: a group (folder) or
+// a single note. Root group is path "".
+export type Nav =
+  | { kind: "group"; path: string }
+  | { kind: "note"; id: string };
+
+// Portable whole-vault export/import shape (mirrors internal/web/portable.go).
+export interface PortableVault {
+  format_version: number;
+  vault_name?: string;
+  items: unknown[];
+  lenses: unknown[];
+  active_item_ids: string[];
+  active_lens?: string;
+}

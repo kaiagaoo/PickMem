@@ -1,6 +1,6 @@
 # PickMem — Chrome extension
 
-Reads your local PickMem vault (an Obsidian directory with a `pickmem/` subfolder), lets you pick which memory items to expose, and injects the selection into the chat input on ChatGPT / Claude.ai / Gemini. Model-agnostic by construction — because it's just text going into an `<input>`, it works on any surface those three cover, and the **Copy** button covers everything else.
+Reads your local PickMem vault (an Obsidian directory with a `pickmem/` subfolder), lets you pick which memory items to expose, and injects the selection into the chat input on ChatGPT / Claude.ai / Gemini / Cosmo. Model-agnostic by construction — because it's just text going into an `<input>`, it works on any surface those sites cover, and the **Copy** button covers everything else.
 
 Distributed as **load-unpacked source**, not from the Chrome Web Store — see [Non-goals](#non-goals) below.
 
@@ -39,7 +39,7 @@ Click the toolbar icon. On first open you'll see **Choose vault folder…** — 
 - **Copy** — assembles the block and writes to clipboard. Also persists the selection to `pickmem/active.json`.
 - **Insert** — same as Copy, plus messages the active tab to prepend the block into the chat's input box (existing draft text is preserved below).
 
-If the current tab isn't on ChatGPT / Claude.ai / Gemini, the header shows `no adapter · clipboard only` and **Insert** is disabled. **Copy** always works.
+If the current tab isn't on ChatGPT / Claude.ai / Gemini / Cosmo, the header shows `no adapter · clipboard only` and **Insert** is disabled. **Copy** always works.
 
 ## Sites supported
 
@@ -48,6 +48,7 @@ If the current tab isn't on ChatGPT / Claude.ai / Gemini, the header shows `no a
 | ChatGPT | `chatgpt.com`, `chat.openai.com` | ProseMirror contenteditable |
 | Claude.ai | `claude.ai` | ProseMirror contenteditable |
 | Gemini | `gemini.google.com` | Quill contenteditable |
+| Cosmo | `heycosmo.ai`, `www.heycosmo.ai` | Plain `<textarea>` |
 
 Adapters are declarative (URL pattern + input selector + insert method). Adding a site is a single entry in [`src/adapters/index.ts`](src/adapters/index.ts).
 
@@ -60,7 +61,7 @@ The manifest requests the minimum:
 - `clipboardWrite` — the **Copy** button. Works even without vault access; this is the low-permission escape hatch.
 - `storage` — reserved for future prefs (currently unused; kept declared so future migrations don't need a manifest bump that Chrome would re-review).
 - `activeTab` + `scripting` — send inject messages to the current tab only. No wildcard content-script injection into unrelated tabs.
-- Host permissions for `chatgpt.com` / `chat.openai.com` / `claude.ai` / `gemini.google.com` — the three sites we ship adapters for. Content scripts run only on those hosts.
+- Host permissions for `chatgpt.com` / `chat.openai.com` / `claude.ai` / `gemini.google.com` / `heycosmo.ai` (apex + `www`) — the sites we ship adapters for. Content scripts run only on those hosts.
 
 **Not requested:** `tabs` (no tab metadata), `history`, `cookies`, `webRequest`, `<all_urls>` host permissions. The File System Access grant is per-directory and per-origin — it lives in browser state, not in `chrome://permissions`.
 
@@ -84,6 +85,7 @@ Run through this before shipping a new build:
 - [ ] **Insert on ChatGPT**: navigate to `chatgpt.com`, open popup → header says `ChatGPT · ready`, click **Insert** → block prepends into the composer, existing draft preserved.
 - [ ] **Insert on Claude.ai**: same as above at `claude.ai`.
 - [ ] **Insert on Gemini**: same at `gemini.google.com`.
+- [ ] **Insert on Cosmo**: navigate to `heycosmo.ai/prompt`, open popup → header says `Cosmo · ready`, click **Insert** → block prepends into the `#prompt-command-composer` textarea, existing draft preserved.
 - [ ] **No-adapter site**: navigate to `example.com` → header says `no adapter · clipboard only`, **Insert** is disabled, **Copy** works.
 - [ ] **Vault write**: after Copy/Insert, `pickmem/active.json` in the vault contains `item_ids` matching the selection, and `active_lens` matches the popup's header.
 - [ ] **Byte parity with MCP**: same selection → `pickmem serve` and the extension produce identical assembled blocks. Test: `pickmem pick` a lens, run `pickmem serve` and read `pickmem://active` via a minimal client; also click **Copy** in the popup; the strings should be byte-identical.

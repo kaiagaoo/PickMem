@@ -29,6 +29,10 @@ interface Actions {
   importVault: (blob: unknown) => Promise<void>;
   clearVault: () => Promise<void>;
   exportVault: () => Promise<unknown>;
+  switchVault: (path: string) => Promise<void>;
+  createVault: (path: string, name: string) => Promise<void>;
+  importVaultAsNew: (path: string, name: string, vault: unknown) => Promise<void>;
+  forgetVault: (path: string) => Promise<void>;
 }
 
 interface Ctx {
@@ -107,6 +111,10 @@ export function VaultProvider({
       importVault: (blob) => run(api.importVault(blob)),
       clearVault: () => run(api.clearVault()),
       exportVault: () => api.exportVault(),
+      switchVault: (path) => run(api.switchVault(path)),
+      createVault: (path, name) => run(api.createVault(path, name)),
+      importVaultAsNew: (path, name, v) => run(api.importVaultAsNew(path, name, v)),
+      forgetVault: (path) => run(api.forgetVault(path)),
     }),
     [run, setActive, state.active.item_ids],
   );

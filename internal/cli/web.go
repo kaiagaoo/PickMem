@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/kaiagaoo/PickMem/internal/userconf"
 	"github.com/kaiagaoo/PickMem/internal/web"
 	"github.com/spf13/cobra"
 )
@@ -38,6 +39,9 @@ make in Obsidian or the CLI show up on the next click.`,
 			if err != nil {
 				return err
 			}
+			// Record the launched vault as current + recent so the web
+			// switcher lists it and future commands default to it.
+			_ = userconf.SetCurrent(s.Root)
 			srv := web.NewServer(s)
 
 			addr := fmt.Sprintf("%s:%d", host, port)
