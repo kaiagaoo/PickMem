@@ -1,0 +1,28 @@
+{
+  "name": "pickmem-synthetic-context-v1",
+  "notes": [
+    {"id":"communication","label":"Answer style","group":"about/preferences","tags":["preference"],"body":"Prefers concise answers with bullets and no filler introduction."},
+    {"id":"allergy","label":"Penicillin allergy","group":"about/health","tags":["health","sensitive"],"body":"Has a severe allergy to penicillin and related antibiotics."},
+    {"id":"diet","label":"Vegetarian diet","group":"about/health","tags":["food","preference"],"body":"Eats vegetarian meals and avoids meat."},
+    {"id":"typescript","label":"TypeScript stack","group":"work/stack","tags":["typescript","engineering"],"body":"Uses TypeScript, React, and pnpm with strict compiler settings."},
+    {"id":"go","label":"Go services","group":"work/stack","tags":["golang","backend"],"body":"Builds backend services in Go and prefers table-driven tests."},
+    {"id":"pickmem","label":"PickMem project","group":"work/projects","tags":["ai","mcp"],"body":"Developing a local-first memory and context architecture for LLM agents using MCP."},
+    {"id":"travel","label":"Japan trip","group":"relationships/dates","tags":["travel"],"body":"Plans to visit Kyoto in November with a close friend."},
+    {"id":"housing","label":"Apartment search","group":"home/housing","tags":["budget"],"body":"Looking for a quiet two-bedroom apartment near public transit."},
+    {"id":"salary","label":"Compensation","group":"finance/income","tags":["sensitive"],"body":"Monthly base salary is eight thousand dollars plus a quarterly bonus."},
+    {"id":"learning","label":"ML systems learning goal","group":"learning/topics","tags":["machine-learning"],"body":"Wants to learn evaluation methods for production LLM systems."},
+    {"id":"a-market-reference","label":"AI market article","group":"learning/resources","tags":["reference"],"body":"Saved an article mentioning MCP architecture trends and vendor announcements."}
+  ],
+  "cases": [
+    {"query":"Make this response concise and easy to scan","relevant_ids":["communication"]},
+    {"query":"Help me prepare questions for an antibiotic prescription","relevant_ids":["allergy"]},
+    {"query":"Plan a vegetarian dinner","relevant_ids":["diet"]},
+    {"query":"Debug this TypeScript React build","relevant_ids":["typescript"]},
+    {"query":"Write table driven tests for my Go backend","relevant_ids":["go"]},
+    {"query":"MCP architecture","relevant_ids":["pickmem"]},
+    {"query":"Create an itinerary for Kyoto in November","relevant_ids":["travel"]},
+    {"query":"Compare apartments near transit","relevant_ids":["housing"]},
+    {"query":"Estimate income including my quarterly bonus","relevant_ids":["salary"]},
+    {"query":"Design an evaluation for a production LLM system","relevant_ids":["learning","pickmem"]}
+  ]
+}

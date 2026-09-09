@@ -1,0 +1,17 @@
+User: Help me plan a long weekend trip to Portland for me and Sam in October.
+
+Assistant: Happy to. When in October, and what kind of trip — food, outdoors, relaxed?
+
+User: Probably the second weekend. It's actually for Sam's birthday on October 12th, so I want it to feel special. We're both into food, but Sam is vegetarian so we'll want places with good veggie options. I'm allergic to shellfish so nothing seafood-heavy for me either.
+
+Assistant: Great — a food-focused birthday weekend, vegetarian-friendly, shellfish-free. Portland is perfect for that. Here are some neighborhoods and restaurants...
+
+User: These look good. Can you also find somewhere with a nice view for the actual birthday dinner on the 12th?
+
+Assistant: [suggests a few restaurants with views]
+
+User: Love it. Book nothing yet, I'll do that myself — just wanted the shortlist. Thanks!
+
+Assistant: Sounds good. Let me know if you want me to draft an itinerary.
+
+User: Maybe later. Oh, and I use a wheelchair, so anywhere you suggest needs to be step-free access.

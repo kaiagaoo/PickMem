@@ -163,7 +163,7 @@ The setup guide is entirely optional — **Skip for now** leaves you with just t
 └───────────────┴─────────────────────────────────────┴───────────────────────┘
 ```
 
-- **Left — navigate.** The vault switcher (top), your **folder tree** (groups, collapsible), your **lenses**, the **Inbox** (with a count), **Settings**, and an inert **✨ Suggestions** entry for the future AI feature.
+- **Left — navigate.** The vault switcher (top), your **folder tree** (groups, collapsible), your **lenses**, the **Inbox** (with a count), **Settings**, and local **✨ Suggestions** for task-aware context ranking.
 - **Center — browse & pick.** A drill-down view of wherever you are: a breadcrumb, the current group's subgroups (as folders you open) and its notes (as cards). Clicking a note opens its detail.
 - **Right — active memory.** The current pick: a live list of what you selected, a rough token estimate, **Copy context**, **Save as lens**, and **Clear pick**. This tray is *exactly* what a model receives.
 
@@ -346,7 +346,7 @@ pickmem review
 
 Nothing an assistant stages ever goes live until you accept it.
 
-> Fully automatic extraction (PickMem noticing memories as you work and proposing them itself) is the planned next step — the inert **Suggestions** entry in the web app reserves its place. Today, extraction is assistant-driven through `stage_memories`.
+> Fully automatic extraction (PickMem noticing new durable facts as you work) remains experimental. The **Suggestions** view solves a different problem: it ranks existing memories for a task and requires you to approve each one before activation. New-memory extraction is assistant-driven through `stage_memories`.
 
 ---
 
@@ -419,6 +419,8 @@ pickmem rm <id-or-suffix> --yes
 pickmem pick                                   # terminal picker → writes active.json
 pickmem status                                 # vault summary + current selection
 pickmem context [--copy]                       # print (or copy) the assembled block
+pickmem suggest "<task>" [--top 5] [--json]   # rank relevant notes; never activates them
+pickmem eval [--dataset <json>] [--top 3]      # offline retrieval evaluation
 pickmem lens list | use <name> | rm <name>     # manage saved lenses
 pickmem inbox clear [--source import|extract|manual] --yes   # bulk-delete pending items
 

@@ -1,4 +1,4 @@
-import type { NoteInput, State } from "./types";
+import type { NoteInput, State, Suggestion } from "./types";
 
 // Every mutation endpoint returns the full, freshly-reloaded State, so the
 // client is a pure function of the last response — no local cache to keep in
@@ -18,8 +18,22 @@ async function request(path: string, init?: RequestInit): Promise<State> {
   return data as State;
 }
 
+async function requestSuggestions(query: string, limit = 5): Promise<Suggestion[]> {
+  const res = await fetch("/api/suggestions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, limit }),
+  });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : {};
+  if (!res.ok) throw new Error(data?.error || `${res.status} ${res.statusText}`);
+  return (data?.items ?? []) as Suggestion[];
+}
+
 export const api = {
   getState: () => request("/state"),
+
+  suggestions: requestSuggestions,
 
   addNote: (n: NoteInput) =>
     request("/notes", { method: "POST", body: JSON.stringify(n) }),

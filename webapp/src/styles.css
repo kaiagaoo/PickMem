@@ -1703,3 +1703,16 @@ button.mc-label:hover {
     border-top: 1px solid var(--line);
   }
 }
+.suggestions-view .pane-sub { margin-top: 6px; }
+.suggest-form { display: flex; gap: 10px; align-items: flex-end; margin: 20px 0; }
+.suggest-form textarea { min-height: 82px; flex: 1; }
+.suggest-form button { flex: none; }
+.suggest-list { display: flex; flex-direction: column; gap: 10px; }
+.suggest-card { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.suggest-card.picked { border-color: var(--accent-line); background: var(--accent-soft); }
+.suggest-rank { width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center; background: var(--paper-2); color: var(--muted); font-size: 12px; font-weight: 700; flex: none; }
+.suggest-main { flex: 1; min-width: 0; }
+.suggest-main p { margin: 5px 0; color: var(--ink-2); }
+.suggest-title-row { display: flex; gap: 9px; align-items: baseline; flex-wrap: wrap; }
+.suggest-evidence { display: flex; gap: 10px; flex-wrap: wrap; color: var(--muted); font-family: var(--mono); font-size: 11px; }
+.suggest-error { color: var(--danger); }

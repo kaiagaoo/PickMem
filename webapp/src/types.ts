@@ -54,6 +54,16 @@ export interface NoteInput {
   to_inbox?: boolean;
 }
 
+export interface Suggestion {
+  id: string;
+  label: string;
+  group: string;
+  body: string;
+  tags: string[];
+  score: number;
+  matched_terms: string[];
+}
+
 // A view is a center-pane screen selected from the left sidebar.
 export type View = "vault" | "inbox" | "lenses" | "settings" | "suggestions";
 
@@ -62,4 +72,3 @@ export type View = "vault" | "inbox" | "lenses" | "settings" | "suggestions";
 export type Nav =
   | { kind: "group"; path: string }
   | { kind: "note"; id: string };
-

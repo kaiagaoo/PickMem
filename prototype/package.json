@@ -1,0 +1,16 @@
+{
+  "name": "pickmem-extraction-prototype",
+  "private": true,
+  "type": "module",
+  "description": "Standalone harness to prototype AI memory extraction before wiring it into the PickMem extension.",
+  "scripts": {
+    "extract": "tsx extract.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.70.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

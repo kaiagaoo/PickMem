@@ -11,6 +11,7 @@
 [![Local-first](https://img.shields.io/badge/local--first-no%20telemetry-2E3440.svg)](#-design-principles)
 [![Release](https://img.shields.io/github/v/release/kaiagaoo/PickMem?color=success&label=release)](https://github.com/kaiagaoo/PickMem/releases/latest)
 [![MCP](https://img.shields.io/badge/MCP-compatible-5A45FF.svg)](#-take-it-to-your-assistant)
+[![CI](https://github.com/kaiagaoo/PickMem/actions/workflows/ci.yml/badge.svg)](https://github.com/kaiagaoo/PickMem/actions/workflows/ci.yml)
 
 [**Install**](#-get-started) · [**Tour**](#-a-quick-tour) · [**User Guide**](USER_GUIDE.md)
 
@@ -63,6 +64,33 @@ Notes are Markdown files with a small frontmatter header. **Folders are your cat
                      ChatGPT · Claude.ai · Gemini              Claude Desktop · Cursor · Cline
                         (+ copy anywhere)                       (for assistants / AI agents)
 ```
+
+### Context recommendations, with an approval boundary
+
+PickMem can rank likely-relevant memories for a task without activating or
+sending them anywhere:
+
+```bash
+pickmem suggest "prepare for a backend interview about Go and distributed systems"
+```
+
+The recommender is a local, field-weighted BM25 implementation. It returns the
+matched terms and score for every suggestion, and it is deliberately read-only:
+the user still approves context with `pickmem pick`. This provides useful
+ranking without turning retrieval into silent disclosure.
+
+The ranking pipeline includes a reproducible offline evaluation harness:
+
+```bash
+pickmem eval                 # bundled synthetic regression dataset
+pickmem eval --dataset ./my-consented-cases.json --json
+```
+
+It reports precision@k, recall@k, mean reciprocal rank, and context reduction
+against a simple token-overlap baseline. The bundled data is explicitly
+synthetic; it is a regression suite, not a claim of production accuracy. See
+[`docs/AI_ENGINEERING.md`](docs/AI_ENGINEERING.md) for the architecture,
+dataset contract, threat model, and evaluation methodology.
 
 ---
 
@@ -134,6 +162,7 @@ These are enforced invariants, not aspirations:
 - **Create-only.** PickMem creates notes and files inbox items into folders. It never rewrites a note you authored without a guard — it verifies on-disk content first and refuses if the file changed under it.
 - **The user decides relevance.** No silent auto-injection. AI extraction only ever *proposes* into an inbox; nothing goes live without your review.
 - **Deterministic lookup, not RAG.** A picked item is fetched by id — an exact read, not a similarity guess.
+- **Suggestions are not disclosure.** Ranking is local and read-only; only a user-approved pick becomes active context.
 - **You own the taxonomy.** Your folder tree defines your categories, and you choose which reach the model.
 
 ---

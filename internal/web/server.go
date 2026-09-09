@@ -17,10 +17,13 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 
+	"github.com/kaiagaoo/PickMem/internal/retrieval"
 	"github.com/kaiagaoo/PickMem/internal/vault"
 )
 
@@ -41,8 +44,50 @@ func NewServer(store *vault.Store) *Server {
 	return s
 }
 
-// Handler returns the root http.Handler (API + embedded SPA).
-func (s *Server) Handler() http.Handler { return s.mux }
+// Handler returns the API + embedded SPA behind a loopback and same-origin
+// guard. A web page can issue "simple" cross-origin POSTs to localhost even
+// when CORS prevents it from reading the response, so CORS alone is not a
+// sufficient boundary for endpoints that can modify or clear a vault.
+func (s *Server) Handler() http.Handler { return localRequestGuard(s.mux) }
+
+func localRequestGuard(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		if !isLoopbackHostname(requestHostname(r.Host)) {
+			http.Error(w, "PickMem web only accepts loopback hosts", http.StatusForbidden)
+			return
+		}
+		if r.Header.Get("Sec-Fetch-Site") == "cross-site" {
+			http.Error(w, "cross-site requests are not allowed", http.StatusForbidden)
+			return
+		}
+		if origin := r.Header.Get("Origin"); origin != "" {
+			u, err := url.Parse(origin)
+			if err != nil || !strings.EqualFold(u.Host, r.Host) ||
+				(u.Scheme != "http" && u.Scheme != "https") {
+				http.Error(w, "cross-origin requests are not allowed", http.StatusForbidden)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func requestHostname(hostport string) string {
+	if host, _, err := net.SplitHostPort(hostport); err == nil {
+		return host
+	}
+	return strings.Trim(hostport, "[]")
+}
+
+func isLoopbackHostname(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
+}
 
 func (s *Server) routes() {
 	// API. Each handler runs under withVault, which takes the lock and
@@ -63,6 +108,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("PUT /api/vault/name", s.withVault(s.handleSetVaultName))
 	s.mux.HandleFunc("PUT /api/suggested-tags", s.withVault(s.handleSetSuggestedTags))
 	s.mux.HandleFunc("POST /api/import", s.withVault(s.handleImport))
+	s.mux.HandleFunc("POST /api/suggestions", s.withVault(s.handleSuggestions))
 	s.mux.HandleFunc("POST /api/vault/clear", s.withVault(s.handleClearVault))
 	s.mux.HandleFunc("POST /api/vaults/switch", s.withLock(s.handleSwitchVault))
 	s.mux.HandleFunc("POST /api/vaults/create", s.withLock(s.handleCreateVault))
@@ -76,6 +122,48 @@ func (s *Server) routes() {
 	// Everything else: the embedded SPA, with a fallback to index.html so
 	// client-side navigation works.
 	s.mux.Handle("/", s.spaHandler())
+}
+
+type suggestionsReq struct {
+	Query string `json:"query"`
+	Limit int    `json:"limit"`
+}
+
+type suggestionDTO struct {
+	ID           string   `json:"id"`
+	Label        string   `json:"label"`
+	Group        string   `json:"group"`
+	Body         string   `json:"body"`
+	Tags         []string `json:"tags"`
+	Score        float64  `json:"score"`
+	MatchedTerms []string `json:"matched_terms"`
+}
+
+// handleSuggestions ranks candidates but never writes active.json. The
+// response gives the UI enough evidence to let the user make the disclosure
+// decision themselves.
+func (s *Server) handleSuggestions(w http.ResponseWriter, r *http.Request) {
+	var req suggestionsReq
+	if !decode(w, r, &req) {
+		return
+	}
+	if strings.TrimSpace(req.Query) == "" {
+		writeErr(w, http.StatusBadRequest, "task description required")
+		return
+	}
+	if req.Limit <= 0 || req.Limit > 20 {
+		req.Limit = 5
+	}
+	matches := retrieval.Rank(req.Query, s.store.ListActive(), req.Limit)
+	items := make([]suggestionDTO, 0, len(matches))
+	for _, match := range matches {
+		items = append(items, suggestionDTO{
+			ID: match.Note.ID, Label: match.Note.Label, Group: match.Note.Group,
+			Body: match.Note.Body, Tags: match.Note.Tags, Score: match.Score,
+			MatchedTerms: match.MatchedTerms,
+		})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
 // withVault wraps a handler: it takes the process lock, reloads the vault

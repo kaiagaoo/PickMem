@@ -1,0 +1,17 @@
+User: I'm trying to get esbuild to output a single bundled file for a Chrome MV3 service worker. My content script bundles fine but the worker keeps complaining about import.meta.
+
+Assistant: For an MV3 service worker with esbuild, set format: "esm" and target a recent Chrome. Can you share your build config?
+
+User: Sure. I'm on esbuild 0.21, bundling with format "esm", platform "browser". I switched from webpack last month because the config got unmanageable and builds were slow — esbuild is way faster. The whole thing is a TypeScript project, strict mode on, and I run the build through pnpm scripts.
+
+Assistant: Got it. The import.meta issue is usually a target problem. Set target: "chrome110" or later and esbuild will keep import.meta.url intact...
+
+User: That fixed it, thanks. One more thing — I want to add a Vitest suite before I ship. I have a soft deadline to get this extension into the Chrome Web Store by the end of August, so I'm trying not to add too much scope.
+
+Assistant: Vitest is a good fit for an esbuild/TS project. Want me to scaffold a config?
+
+User: Yeah please. And keep the answer short — just give me the config and the command, I don't need the explanation.
+
+Assistant: [provides vitest.config.ts and the test command]
+
+User: perfect, that works.

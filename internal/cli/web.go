@@ -35,6 +35,9 @@ stays on disk. It reloads the vault from disk on every request, so edits you
 make in Obsidian or the CLI show up on the next click.`,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if !isLoopbackBindHost(host) {
+				return fmt.Errorf("refusing non-loopback --host %q: the vault API is local-only", host)
+			}
 			s, err := openVault(cmd)
 			if err != nil {
 				return err
@@ -75,9 +78,17 @@ make in Obsidian or the CLI show up on the next click.`,
 		},
 	}
 	cmd.Flags().IntVar(&port, "port", 4577, "port to listen on")
-	cmd.Flags().StringVar(&host, "host", "127.0.0.1", "host/interface to bind (localhost by default)")
+	cmd.Flags().StringVar(&host, "host", "127.0.0.1", "loopback host/interface to bind")
 	cmd.Flags().BoolVar(&noOpen, "no-open", false, "don't open a browser automatically")
 	return cmd
+}
+
+func isLoopbackBindHost(host string) bool {
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 // openBrowser opens url in the platform's default browser. Best-effort:

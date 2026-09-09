@@ -5,7 +5,7 @@ import { VaultTree, type TreeHandlers } from "./VaultTree";
 
 // Sidebar is the left navigation zone: the vault switcher, the full
 // Obsidian-style tree (groups → note titles), then lenses, inbox, settings,
-// and the inert Suggestions seam.
+// and the local, user-approved context Suggestions workflow.
 export function Sidebar({
   view,
   setView,

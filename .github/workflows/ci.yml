@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            webapp/package-lock.json
+            extension/package-lock.json
+      - name: Test and vet Go core
+        run: |
+          go test ./...
+          go vet ./...
+      - name: Test and build extension
+        run: |
+          npm --prefix extension ci
+          npm --prefix extension test
+          npm --prefix extension run typecheck
+          npm --prefix extension run build
+      - name: Type-check and build web app
+        run: |
+          npm --prefix webapp ci
+          npm --prefix webapp run typecheck
+          npm --prefix webapp run build

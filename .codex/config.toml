@@ -1,0 +1,6 @@
+[mcp_servers.pickmem]
+command = "/Users/gaoqianwen/PickMem/.venv/bin/pickmem"
+args = ["serve"]
+
+[mcp_servers.pickmem.env]
+PICKMEM_DB = "/tmp/pickmem_test.db"

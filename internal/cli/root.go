@@ -39,6 +39,8 @@ func NewRoot() *cobra.Command {
 		newUninstallCmd(),
 		newImportCmd(),
 		newReviewCmd(),
+		newSuggestCmd(),
+		newEvalCmd(),
 	)
 	return root
 }
