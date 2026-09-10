@@ -70,7 +70,7 @@ curl -fsSL https://raw.githubusercontent.com/kaiagaoo/PickMem/main/install.sh | 
 
 It installs to `/usr/local/bin` if writable, else `~/.local/bin`. Overrides: `PICKMEM_VERSION=v0.1.1` to pin, `PICKMEM_INSTALL_DIR=…` for a custom target. Windows: grab the `.zip` from the [releases page](https://github.com/kaiagaoo/PickMem/releases/latest).
 
-**Or build from source** (needs Go 1.26+ and Node.js 20+):
+**Or build from source** (needs Go 1.26+ and Node.js 22.6+):
 
 ```bash
 git clone https://github.com/kaiagaoo/PickMem.git

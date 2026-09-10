@@ -28,7 +28,9 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Extension tests use Node's built-in TypeScript stripping.
+          # Keep this aligned with CI and extension/@types/node.
+          node-version: 24
 
       # The SPA is embedded by Go at compile time. Rebuild it for every
       # release and fail if the checked-in bundle is stale, otherwise a tag
