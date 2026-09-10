@@ -70,13 +70,18 @@ curl -fsSL https://raw.githubusercontent.com/kaiagaoo/PickMem/main/install.sh | 
 
 It installs to `/usr/local/bin` if writable, else `~/.local/bin`. Overrides: `PICKMEM_VERSION=v0.1.1` to pin, `PICKMEM_INSTALL_DIR=…` for a custom target. Windows: grab the `.zip` from the [releases page](https://github.com/kaiagaoo/PickMem/releases/latest).
 
-**Or build from source** (needs Go 1.26+):
+**Or build from source** (needs Go 1.26+ and Node.js 20+):
 
 ```bash
 git clone https://github.com/kaiagaoo/PickMem.git
 cd PickMem
-go install ./cmd/pickmem      # → $(go env GOPATH)/bin — make sure that's on PATH
+./start.sh                     # build every surface, initialize, and open PickMem
 ```
+
+`./start.sh /path/to/vault` uses a specific vault. It rebuilds the embedded
+web app, tests and builds the Chrome extension, compiles the Go binary, and
+then launches the browser UI. For only the CLI binary, use
+`go install ./cmd/pickmem` (make sure `$(go env GOPATH)/bin` is on `PATH`).
 
 Verify:
 

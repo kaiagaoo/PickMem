@@ -169,6 +169,17 @@ These are enforced invariants, not aspirations:
 
 ## 🛠️ Development
 
+From a clone, one command installs locked dependencies, tests and builds the
+web app + Chrome extension, compiles the Go binary, initializes a default
+vault if needed, and opens PickMem:
+
+```bash
+./start.sh
+```
+
+Pass a vault path as the first argument when you do not want
+`~/PickMemVault`. Set `PICKMEM_NO_OPEN=1` for a headless start.
+
 ```bash
 go test ./... && go vet ./...        # Go core
 cd webapp && npm install && npm run build     # SPA → internal/web/static/ (embedded; build before go build)
