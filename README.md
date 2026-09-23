@@ -79,19 +79,6 @@ matched terms and score for every suggestion, and it is deliberately read-only:
 the user still approves context with `pickmem pick`. This provides useful
 ranking without turning retrieval into silent disclosure.
 
-The ranking pipeline includes a reproducible offline evaluation harness:
-
-```bash
-pickmem eval                 # bundled synthetic regression dataset
-pickmem eval --dataset ./my-consented-cases.json --json
-```
-
-It reports precision@k, recall@k, mean reciprocal rank, and context reduction
-against a simple token-overlap baseline. The bundled data is explicitly
-synthetic; it is a regression suite, not a claim of production accuracy. See
-[`docs/AI_ENGINEERING.md`](docs/AI_ENGINEERING.md) for the architecture,
-dataset contract, threat model, and evaluation methodology.
-
 ---
 
 ## 🚀 Get started
